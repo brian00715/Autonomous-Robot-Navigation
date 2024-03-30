@@ -23,7 +23,7 @@ NUS ME5413 Autonomous Mobile Robotics Final Project
 ![GitHub Repo stars](https://img.shields.io/github/stars/NUS-Advanced-Robotics-Centre/ME5413_Final_Project?color=FFE333)
 ![GitHub Repo forks](https://img.shields.io/github/forks/NUS-Advanced-Robotics-Centre/ME5413_Final_Project?color=FFE333)
 
-![cover_image](src/me5413_world/media/gazebo_world.png)
+![cover_image](me5413_world/media/gazebo_world.png)
 
 ## Dependencies
 
