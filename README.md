@@ -1,3 +1,23 @@
+# Installation guide
+### Q： clone 仓库不成功
+A： 首次不成功时，请到github设置当中，左边翻倒最下面Developer Settings -> Personal acess -> Tokens Classic
+    Generate new token -> Generate new token Classic, 选中所有权限，新建token即可
+    请找地方记住这个token字符串，在clone仓库时，将此token填入密码处即可
+    请clone到catkin workspace当中
+
+### Q： 缺少各种包Dependency 
+A:  请根据README.md的安装步骤进行安装，注意修改文件路径以对应自己的电脑
+
+
+If an error indicating that rviz_imu_plugin/Imu failed to load is encountered, the following command should be executed:
+```
+sudo apt install ros-<distro>-rviz-imu-plugin
+```
+In our case, '**<distro>**' should be replaced by '**noetic**'.
+
+##
+# BELOW IS THE ORIGINAL  ```readme``` FILE 
+
 # ME5413_Final_Project
 
 ## Running
@@ -19,7 +39,7 @@ NUS ME5413 Autonomous Mobile Robotics Final Project
 ![GitHub Repo stars](https://img.shields.io/github/stars/NUS-Advanced-Robotics-Centre/ME5413_Final_Project?color=FFE333)
 ![GitHub Repo forks](https://img.shields.io/github/forks/NUS-Advanced-Robotics-Centre/ME5413_Final_Project?color=FFE333)
 
-![cover_image](src/me5413_world/media/gazebo_world.png)
+![cover_image](me5413_world/media/gazebo_world.png)
 
 ## Dependencies
 
@@ -123,7 +143,7 @@ roslaunch me5413_world manual.launch
 
 **Note:** This robot keyboard teleop control is also included in all other launch files, so you don't need to launch this when you do mapping or navigation.
 
-![rviz_manual_image](src/me5413_world/media/rviz_manual.png)
+![rviz_manual_image](me5413_world/media/rviz_manual.png)
 
 ### 2. Mapping
 
@@ -142,7 +162,7 @@ roscd me5413_world/maps/
 rosrun map_server map_saver -f my_map map:=/map
 ```
 
-![rviz_nmapping_image](src/me5413_world/media/rviz_mapping.png)
+![rviz_nmapping_image](me5413_world/media/rviz_mapping.png)
 
 ### 3. Navigation
 
@@ -155,7 +175,7 @@ Then, in the second terminal:
 roslaunch me5413_world navigation.launch
 ```
 
-![rviz_navigation_image](src/me5413_world/media/rviz_navigation.png)
+![rviz_navigation_image](me5413_world/media/rviz_navigation.png)
 
 ## Student Tasks
 
@@ -177,7 +197,7 @@ roslaunch me5413_world navigation.launch
   * Delivery Vehicle 1, 2, 3
 * We have provided you a GUI in RVIZ that allows you to click and publish these given goal poses to the `/move_base_simple/goal` topic:
   
-  ![rviz_panel_image](src/me5413_world/media/rviz_panel.png)
+  ![rviz_panel_image](me5413_world/media/rviz_panel.png)
 
 * We also provides you four topics (and visualized in RVIZ) that computes the real-time pose error between your robot and the selelcted goal pose:
   * `/me5413_world/absolute/heading_error` (in degrees, wrt `world` frame, `std_msgs::Float32`)
