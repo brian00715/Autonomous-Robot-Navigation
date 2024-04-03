@@ -13,7 +13,7 @@ If an error indicating that rviz_imu_plugin/Imu failed to load is encountered, t
 ```
 sudo apt install ros-<distro>-rviz-imu-plugin
 ```
-In our case, '<**distro**>' should be replaced by '**noetic**'.
+In our case, '**<distro>**' should be replaced by '**noetic**'.
 
 ##
 # BELOW IS THE ORIGINAL  ```readme``` FILE 
