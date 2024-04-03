@@ -1,5 +1,14 @@
 # ME5413_Final_Project
 
+## Running
+
+- navigation
+```shell
+roslaunch me5413_world world.launch
+roslaunch final_nav navigation.launch
+```
+
+---
 NUS ME5413 Autonomous Mobile Robotics Final Project
 > Authors: [Christina](https://github.com/ldaowen), [Yuhang](https://github.com/yuhang1008), [Dongen](https://github.com/nuslde), and [Shuo](https://github.com/SS47816)
 
