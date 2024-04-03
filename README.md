@@ -8,6 +8,13 @@ A： 首次不成功时，请到github设置当中，左边翻倒最下面Develo
 ### Q： 缺少各种包Dependency 
 A:  请根据README.md的安装步骤进行安装，注意修改文件路径以对应自己的电脑
 
+
+If an error indicating that rviz_imu_plugin/Imu failed to load is encountered, the following command should be executed:
+```
+sudo apt install ros-<distro>-rviz-imu-plugin
+```
+In our case, '<**distro**>' should be replaced by '**noetic**'.
+
 ##
 # BELOW IS THE ORIGINAL  ```readme``` FILE 
 
