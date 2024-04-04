@@ -1,13 +1,25 @@
+# Project Introduction
+
+## Structure
+
+```shell
+.
+├── final_nav # Navigation package
+├── final_percep # Perception package
+├── final_slam # SLAM package
+├── jackal_description 
+└──  me5413_world
+```
+
 # Installation guide
-### Q： clone 仓库不成功
+- Q： clone 仓库不成功
 A： 首次不成功时，请到github设置当中，左边翻倒最下面Developer Settings -> Personal acess -> Tokens Classic
     Generate new token -> Generate new token Classic, 选中所有权限，新建token即可
     请找地方记住这个token字符串，在clone仓库时，将此token填入密码处即可
     请clone到catkin workspace当中
 
-### Q： 缺少各种包Dependency 
+- Q： 缺少各种包Dependency 
 A:  请根据README.md的安装步骤进行安装，注意修改文件路径以对应自己的电脑
-
 
 If an error indicating that rviz_imu_plugin/Imu failed to load is encountered, the following command should be executed:
 ```
@@ -15,7 +27,16 @@ sudo apt install ros-<distro>-rviz-imu-plugin
 ```
 In our case, '**<distro>**' should be replaced by '**noetic**'.
 
-##
+# Running
+
+- navigation
+```shell
+roslaunch me5413_world world.launch
+roslaunch final_nav navigation.launch
+```
+
+
+---
 # BELOW IS THE ORIGINAL  ```readme``` FILE 
 
 # ME5413_Final_Project
