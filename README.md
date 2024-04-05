@@ -27,6 +27,8 @@ sudo apt install ros-<distro>-rviz-imu-plugin
 ```
 In our case, '**<distro>**' should be replaced by '**noetic**'.
 
+	sudo apt install ros-${ROS_DISTRO}-multirobot-map-merge ros-${ROS_DISTRO}-explore-lite
+
 # Running
 
 - navigation
