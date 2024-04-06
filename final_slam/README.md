@@ -8,8 +8,8 @@ Please open a terminal in your workspace and execute the following commands to i
 
     ```shell
     sudo apt-get update
-    sudo apt-get install -y  python3-rosdep stow
-    # sudo apt-get install -y python3-wstool python3-rosdep ninja-build stow
+    # sudo apt-get install -y  python3-rosdep stow
+    sudo apt-get install -y python3-wstool python3-rosdep ninja-build stow
     ```
 
 ### Install Cartographer Dependencies
