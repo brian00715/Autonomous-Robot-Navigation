@@ -1,12 +1,19 @@
 #!/usr/bin/env python3
 
 import rospy
+import roslaunch
 from std_msgs.msg import String
 from geometry_msgs.msg import PoseStamped, Pose
+from std_msgs.msg import Bool
 import tf2_ros
 import tf2_geometry_msgs
 import tf_conversions
-from std_msgs.msg import Float32
+import threading, subprocess
+
+init_flag = True
+init_arg = None
+
+
 
 class State:
     def __init__(self, robot):
@@ -14,6 +21,8 @@ class State:
     def init(self):
         pass
     def execute(self):
+        pass
+    def terminate(self):
         pass
 
 class Task1Tracking(State):
@@ -24,10 +33,22 @@ class Task1Tracking(State):
         pass
 
 class Task2State(State):
-    def init(self, goal_pose):
-        self.robot.pub_goal.publish(goal_pose)
+    def __init__(self, robot):
+        super().__init__(robot)
+        self.process = None
+
+    def init(self, arg):
+        pub_explore.publish(True)
+        # uuid = roslaunch.rlutil.get_or_generate_uuid(None, False)
+        # roslaunch.configure_logging(uuid)
+        # launch = roslaunch.parent.ROSLaunchParent(uuid, ["/home/luyi/catkin_ws/src/ME5413_Final_Project/final_fsm/explore.launch"])
+        # launch.start()
+        # self.process = launch
+
     def execute(self):
         pass
+    def terminate(self):
+        pub_explore.publish(False)
 
 class Task3Tracking(State):
     def init(self, goal_pose):
@@ -69,8 +90,17 @@ class Robot:
 
 
     def set_state(self, state, args=None):
+        self.current_state.terminate()
         self.current_state = state
-        state.init(args)
+        global init_flag
+        init_flag = False
+
+        global init_arg
+        init_arg = args
+        # state.init(args)
+
+    def init_state(self, args=None):
+        self.current_state.init(args)
 
     def execute_state(self):
         self.current_state.execute()
@@ -159,7 +189,13 @@ if __name__ == '__main__':
     rospy.init_node('robot_state_machine', anonymous=True)
     robot = Robot()
     rospy.Subscriber("robot_state", String, state_callback)
+    pub_explore = rospy.Publisher("/start_explore", Bool, queue_size=1)
+
     rate = rospy.Rate(10)  # 10hz
     while not rospy.is_shutdown():
+        if not init_flag:
+            robot.init_state(init_arg)
+            init_flag = True
+            
         robot.execute_state()
         rate.sleep()
