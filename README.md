@@ -36,7 +36,7 @@ sudo apt install ros-noetic-dwa-local-planner
 
 # Running
 
-- navigation
+- mapping
 ```shell
 roslaunch me5413_world world.launch
 roslaunch final_slam mapping_carto.launch
