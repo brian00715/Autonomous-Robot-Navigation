@@ -7,7 +7,8 @@
   <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" /> -->
 
   <!-- Launch Gmapping -->
-  <include file="$(find final_slam)/launch/gmapping.launch" />
+  <include file="$(find final_slam)/launch/cartographer.launch" />
+
 
   <!-- Launch Navigation -->
   <include file="$(find final_nav)/launch/navigation.launch" />
