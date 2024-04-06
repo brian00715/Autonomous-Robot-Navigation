@@ -11,7 +11,7 @@
 └──  me5413_world
 ```
 
-Please create a new workspace '`ME5413_final_ws`' and clone this 
+Please create a new workspace '`ME5413_final_ws`' and clone this repo
 ```shell
 cd ~
 mkdir ME5413_final_ws
