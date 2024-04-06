@@ -1,6 +1,0 @@
-image: final_map_2d.pgm
-resolution: 0.05
-origin: [-1.45836, -15.5175, 0.0]
-negate: 0
-occupied_thresh: 0.65
-free_thresh: 0.196
