@@ -11,6 +11,18 @@
 └──  me5413_world
 ```
 
+Please create a new workspace '`ME5413_final_ws`' and clone this 
+```shell
+cd ~
+mkdir ME5413_final_ws
+cd ME5413_final_ws
+mkdir src
+cd src
+git clone https://github.com/brian00715/ME5413_Final_Project
+```
+
+FIXME: Remember to highlight that a new workspace is required.
+
 # Installation guide
 - Q: clone 仓库不成功
 - A: 首次不成功时，请到github设置当中，左边翻倒最下面Developer Settings -> Personal acess -> Tokens Classic
