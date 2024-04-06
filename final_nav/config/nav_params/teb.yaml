@@ -1,6 +1,7 @@
 TebLocalPlannerROS:
-  odom_topic: /odometry/filtered
-  #odom_topic: /rtabmap/odom
+  # odom_topic: /gazebo/odom
+  # odom_topic: /odometry/filtered
+  odom_topic: /jackal/gt_odom
   map_frame: map
 
   # Trajectory
@@ -12,7 +13,7 @@ TebLocalPlannerROS:
   feasibility_check_no_poses: 5
 
   # Robot
-  max_vel_x: 1.5
+  max_vel_x: 1.8 # 1.5
   max_vel_x_backwards: 0.4 #0.2
   max_vel_theta: 2 # 4
   acc_lim_x: 20 # 0.2
@@ -31,16 +32,18 @@ TebLocalPlannerROS:
 
   # GoalTolerance
   xy_goal_tolerance: 0.2 #0.2
-  yaw_goal_tolerance: 0.1571
+  yaw_goal_tolerance: 3.14 # 0.1571
   free_goal_vel: False
 
   # Obstacles
   min_obstacle_dist: 0.02 # 0.05
-  inflation_dist: 0.0
+  inflation_dist: 0.15
   dynamic_obstacle_inflation_dist: 0.05
   include_costmap_obstacles: True
-  costmap_obstacles_behind_robot_dist: 0.1
-  obstacle_poses_affected: 25 #30
+  costmap_obstacles_behind_robot_dist: 0 # 0.1
+  legacy_obstacle_association: False
+  # obstacle_poses_affected: 20 # 30
+  obstacle_association_force_inclusion_factor: 1.5
   costmap_converter_plugin: ""
   costmap_converter_spin_thread: True
   costmap_converter_rate: 5
@@ -59,7 +62,7 @@ TebLocalPlannerROS:
   weight_kinematics_forward_drive: 1000 #1000
   weight_kinematics_turning_radius: 1 #1 #only for car-like robots
   weight_optimaltime: 1.0 #1
-  weight_obstacle: 20 #50
+  weight_obstacle: 30 #50
   weight_viapoint: 5.0 #5.0 #1.0
   weight_inflation: 0.1 #0.1
   weight_dynamic_obstacle: 10 # not in use yet
@@ -78,9 +81,9 @@ TebLocalPlannerROS:
   obstacle_heading_threshold: 0.45
   visualize_hc_graph: False
 
-  #ViaPoints
+  # ViaPoints
   global_plan_viapoint_sep: 0.5 #negative if none
   via_points_ordered: False #adhere to order of via points
 
-  #Feedback
+  # Feedback
   publish_feedback: true #false

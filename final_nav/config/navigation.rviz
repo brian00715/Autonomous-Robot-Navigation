@@ -9,7 +9,7 @@ Panels:
         - /TF1
         - /TF1/Frames1
       Splitter Ratio: 0.6628242135047913
-    Tree Height: 633
+    Tree Height: 354
   - Class: rviz/Selection
     Name: Selection
   - Class: rviz/Tool Properties
@@ -109,8 +109,8 @@ Visualization Manager:
         - Alpha: 1
           Autocompute Intensity Bounds: true
           Autocompute Value Bounds:
-            Max Value: 18.494707107543945
-            Min Value: 6.240041732788086
+            Max Value: 6.15912389755249
+            Min Value: -1.0551844835281372
             Value: true
           Axis: X
           Channel Name: intensity
@@ -173,17 +173,31 @@ Visualization Manager:
           Unreliable: false
           Value: false
           Visibility:
-            "": true
             Evaluation:
-              "": true
+              Absolute Error:
+                ADE (m): true
+                AHE (deg): true
+                Value: true
+              BoxMarkerArray: true
+              Relative Error:
+                RDE (m): true
+                RHE (deg): true
+                Value: true
               Value: true
             Grid: true
             InteractiveMarkers: true
             Localization:
-              "": true
+              AMCL PoseArray: true
+              AMCL PoseWithCovariance: true
+              Map: true
               Value: true
             Planning:
-              "": true
+              Foot Print: true
+              Full Path: true
+              Global CostMap: true
+              Goal Pose: true
+              Local CostMap: true
+              Local Path: true
               Value: true
             PointCloud2: true
             RobotModel: true
@@ -193,6 +207,7 @@ Visualization Manager:
               LaserScan: true
               PointCloud2: true
               Value: true
+            TF: true
             Value: true
           Zoom Factor: 1
         - Class: rviz/Image
@@ -529,7 +544,7 @@ Visualization Manager:
           Marker Topic: /gazebo/ground_truth/box_markers
           Name: BoxMarkerArray
           Namespaces:
-            gazebo: true
+            {}
           Queue Size: 100
           Value: true
       Enabled: true
@@ -589,6 +604,10 @@ Visualization Manager:
           Value: false
         front_right_wheel_link:
           Value: false
+        gazebo/base_footprint:
+          Value: true
+        gazebo/odom:
+          Value: true
         imu_link:
           Value: false
         map:
@@ -636,6 +655,9 @@ Visualization Manager:
       Show Axes: true
       Show Names: true
       Tree:
+        gazebo/odom:
+          gazebo/base_footprint:
+            {}
         map:
           odom:
             base_link:
@@ -713,7 +735,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/ThirdPersonFollower
-      Distance: 10
+      Distance: 27.73078727722168
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -721,17 +743,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 0
-        Y: 0
+        X: 12.382085800170898
+        Y: -4.160163879394531
         Z: 0
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.7853981852531433
+      Pitch: 1.5697963237762451
       Target Frame: map
-      Yaw: 0.7853981852531433
+      Yaw: 0.005399112589657307
     Saved:
       - Class: rviz/ThirdPersonFollower
         Distance: 4

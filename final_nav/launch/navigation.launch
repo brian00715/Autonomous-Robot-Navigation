@@ -1,22 +1,28 @@
 <launch>
 
-  <!-- Connect the robot to a keyboard teleop controller -->
-  <!-- <node name="teleop_twist_keyboard" pkg="teleop_twist_keyboard" type="teleop_twist_keyboard.py"
-    output="screen" respawn="true">
-    <param name="repeat_rate" type="double" value="10.0" />
-  </node> -->
+  <arg name="enable_teleop" default="false" />
+  <arg name="localization" value="gt" doc="amcl,gt" />
+
+  <group if="$(arg enable_teleop)">
+    <node name="teleop_twist_keyboard" pkg="teleop_twist_keyboard" type="teleop_twist_keyboard.py"
+      output="screen" respawn="true">
+      <param name="repeat_rate" type="double" value="10.0" />
+    </node>
+  </group>
 
   <!-- Run the map server -->
   <arg name="map_file" default="$(find final_slam)/maps/final_map_2d.yaml" />
   <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" />
 
-  <!-- Launch the AMCL Localizer -->
-  <include file="$(find final_slam)/launch/amcl.launch" />
-  <!-- <node pkg="tf2_ros" type="static_transform_publisher" name="map2odom" args="0 0 0 0 0 0 1 map
-  odom" /> -->
-  <!-- <node pkg="tf" type="static_transform_publisher" name="map2odom" args="0 0 0 0 0 0 1 map
-  odom" /> -->
-
+  <group if="$(eval localization == 'amcl')">
+    <include file="$(find final_slam)/launch/amcl.launch" />
+  </group>
+  <group if="$(eval localization == 'gt')">
+    <node pkg="tf2_ros" type="static_transform_publisher" name="map2odom" args="0 0 0 0 0 0 map odom" />
+    <node pkg="final_slam" type="get_gt_odom.py" name="get_gt_odom" output="screen" />
+    <!-- <node pkg="tf" type="static_transform_publisher" name="map2odom"
+      args="0 0 0 0 0 0 1 map odom 100" /> -->
+  </group>
 
   <!-- Launch Move Base -->
   <include file="$(find final_nav)/launch/move_base.launch" />
