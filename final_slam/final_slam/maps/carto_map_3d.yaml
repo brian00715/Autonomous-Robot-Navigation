@@ -1,0 +1,6 @@
+image: /home/peter/ME5413/ME5413_final/ME5413_final_ws/src/final_slam/final_slam/maps/carto_map_3d.pgm
+resolution: 0.05
+origin: [-1.75, -15.75, 0.0]
+negate: 0
+occupied_thresh: 0.65
+free_thresh: 0.196

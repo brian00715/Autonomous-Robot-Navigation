@@ -106,18 +106,18 @@ options = {
 --------------------------------------------------------------------------------
 MAP_BUILDER.use_trajectory_builder_3d = true
 TRAJECTORY_BUILDER_3D.num_accumulated_range_data = 1
-TRAJECTORY_BUILDER_3D.min_range = 0.3  -- defualt 60 
-TRAJECTORY_BUILDER_3D.max_range = 60.0 -- 30
+TRAJECTORY_BUILDER_3D.min_range = 0.2  -- defualt 60 
+TRAJECTORY_BUILDER_3D.max_range = 30.0 -- 30
 TRAJECTORY_BUILDER_2D.min_z = -0.8
-TRAJECTORY_BUILDER_2D.max_z = 1.0
+TRAJECTORY_BUILDER_2D.max_z = 3.0
 TRAJECTORY_BUILDER_3D.use_online_correlative_scan_matching = true
-TRAJECTORY_BUILDER_3D.submaps.num_range_data = 65 -- 注意和optimize_every_n_nodes对应！ --30 --65
+TRAJECTORY_BUILDER_3D.submaps.num_range_data = 500 -- 注意和optimize_every_n_nodes对应！ --30 --65
 TRAJECTORY_BUILDER_3D.voxel_filter_size = 0.01
 TRAJECTORY_BUILDER_3D.ceres_scan_matcher.rotation_weight = 0.1
 
 MAP_BUILDER.num_background_threads = 5
 POSE_GRAPH.optimization_problem.huber_scale = 5e2
-POSE_GRAPH.optimize_every_n_nodes = 130
+POSE_GRAPH.optimize_every_n_nodes = 10
 POSE_GRAPH.constraint_builder.sampling_ratio = 0.03
 POSE_GRAPH.optimization_problem.ceres_solver_options.max_num_iterations = 16
 POSE_GRAPH.constraint_builder.min_score = 0.95
