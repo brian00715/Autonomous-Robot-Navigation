@@ -144,6 +144,22 @@ def ndarray2pose_se2(ar: np.ndarray) -> geometry_msgs.Pose:
     return pose
 
 
+def pose2ndarray_se2(pose: geometry_msgs.Pose) -> np.ndarray:
+    ar = np.zeros(3)
+    ar[0] = pose.position.x
+    ar[1] = pose.position.y
+    euler = tft.euler_from_quaternion(
+        [
+            pose.orientation.x,
+            pose.orientation.y,
+            pose.orientation.z,
+            pose.orientation.w,
+        ]
+    )
+    ar[2] = euler[2]
+    return ar
+
+
 if __name__ == "__main__":
 
     path = [

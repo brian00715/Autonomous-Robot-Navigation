@@ -128,11 +128,11 @@ class NMPCC:
                 control_error_ = self.var_controls[i, :] - self.u_ref[i, :]
                 cost = (
                     cost
-                    # + ca.mtimes([state_error_, self.ca_params["Q"], state_error_.T])
-                    + ca.mtimes([state_error_, Q_time[i], state_error_.T])
+                    + ca.mtimes([state_error_, self.ca_params["Q"], state_error_.T])
+                    # + ca.mtimes([state_error_, Q_time[i], state_error_.T])
                     + ca.mtimes([control_error_, self.ca_params["R"], control_error_.T])
                 )
-                cost += self.var_controls[i, 0] * 0.5
+                # cost += self.var_controls[i, 0] * 2
             else:
                 cost = cost + ca.mtimes([state_error_, self.ca_params["Qf"], state_error_.T])
         self.opti.minimize(cost)
@@ -143,6 +143,8 @@ class NMPCC:
         self.opti.subject_to(self.var_states[0, :] == self.x0)
 
         ## state space constraint
+        max_lin_acc = self.ca_params["max_lin_acc"]
+        max_ang_acc = self.ca_params["max_ang_acc"]
         for i in range(self.N):
             if self.integrator == "euler":
                 x_next = self.var_states[i, :] + self.dde(self.var_states[i, :], self.var_controls[i, :]).T
@@ -150,24 +152,26 @@ class NMPCC:
                 x_next = self.runge_kutta(self.dde, self.T, self.var_states[i, :], self.var_controls[i, :].T)
             self.opti.subject_to(self.var_states[i + 1, :] == x_next)
 
-            if i > 1:  # acceleration limit
+            if i > 1 and 1:  # acceleration limit
                 self.opti.subject_to(
                     self.opti.bounded(
-                        -self.ca_params["max_lin_acc"],
-                        (self.var_states[i + 1, :] - self.var_states[i, :]) / self.T,
-                        self.ca_params["max_lin_acc"],
+                        -max_lin_acc, (self.var_states[i + 1, 0] - self.var_states[i, 0]) / self.T, max_lin_acc
                     )
                 )
                 self.opti.subject_to(
                     self.opti.bounded(
-                        -self.ca_params["max_ang_acc"],
-                        (self.var_states[i + 1, 2] - self.var_states[i, 2]) / self.T,
-                        self.ca_params["max_ang_acc"],
+                        -max_lin_acc, (self.var_states[i + 1, 1] - self.var_states[i, 1]) / self.T, max_lin_acc
+                    )
+                )
+                self.opti.subject_to(
+                    self.opti.bounded(
+                        -max_ang_acc, (self.var_states[i + 1, 2] - self.var_states[i, 2]) / self.T, max_ang_acc
                     )
                 )
 
         ## input limits
-        self.opti.subject_to(self.opti.bounded(-self.ca_params["max_vel"], v, self.ca_params["max_vel"]))
+        # self.opti.subject_to(self.opti.bounded(-self.ca_params["max_vel"], v, self.ca_params["max_vel"]))
+        self.opti.subject_to(self.opti.bounded(0.2, v, self.ca_params["max_vel"]))
         self.opti.subject_to(self.opti.bounded(-self.ca_params["max_omega"], omega, self.ca_params["max_omega"]))
 
         if solver_params is not None:

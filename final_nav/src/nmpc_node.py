@@ -14,12 +14,37 @@ from dynamic_reconfigure.server import Server as DynServer
 from geometry_msgs.msg import Pose, PoseArray, PoseStamped, Twist
 from nav_msgs.msg import Odometry, Path
 from nmpc_controller import NMPCC
-from utils import (euclidian_dist_se2, extract_interpolated_path,
-                   ndarray2pose_se2, path2ndarray_se2, quat2yaw)
+from utils import (
+    euclidian_dist_se2,
+    extract_interpolated_path,
+    ndarray2pose_se2,
+    path2ndarray_se2,
+    quat2yaw,
+    pose2ndarray_se2,
+)
+
+
+class PIDController:
+    def __init__(self, kp=1, ki=0, kd=0, max_output=100):
+        self.kp = kp
+        self.ki = ki
+        self.kd = kd
+        self.prev_error = 0
+        self.integral = 0
+        self.max_output = 100
+
+    def get_output(self, curr, ref, dt):
+        error = ref - curr
+        self.integral += error * dt
+        derivative = (error - self.prev_error) / dt
+        output = self.kp * error + self.ki * self.integral + self.kd * derivative
+        self.prev_error = error
+        output = max(min(output, self.max_output), -self.max_output)
+        return output
 
 
 class NMPCNode:
-    def __init__(self, method="mpc"):
+    def __init__(self, method="mpc", freq=10):
         rospy.init_node("path_tracker_node")
 
         self.flag = True
@@ -30,6 +55,10 @@ class NMPCNode:
         param_dict = yaml.safe_load(open(config_path, "r"))
         self.arrive_th = param_dict["arrive_th"]
         self.vel_ref = param_dict["vel_ref"]
+        self.rot_th = np.deg2rad(param_dict["rot_th"])
+        self.freq = param_dict["freq"]
+
+        self.yaw_pid = PIDController(kp=1, ki=0, kd=0.1)
 
         if self.method == "mpc":
             self.N = param_dict["N"]
@@ -250,9 +279,18 @@ class NMPCNode:
         return cmd_vel
 
     def run(self):
-        rate = rospy.Rate(10)
+        rate = rospy.Rate(self.freq)
         while not rospy.is_shutdown():
             if self.local_ref_path is not None and self.curr_pose is not None and self.enable_plan:
+                first_point = pose2ndarray_se2(self.local_ref_path.poses[0].pose)
+                if abs(self.curr_pose[2] - first_point[2]) > math.pi:
+                    if self.curr_pose[2] > first_point[2]:
+                        self.curr_pose[2] -= 2 * math.pi
+                    else:
+                        self.curr_pose[2] += 2 * math.pi
+                if abs(self.curr_pose[2] - first_point[2]) > self.rot_th:
+                    cmd_vel = Twist()
+                    cmd_vel.angular.z = self.yaw_pid.get_output(self.curr_pose[2], first_point[2], 1 / self.freq)
                 if self.method == "mpc":
                     cmd_vel = self.compute_cmd_vel_mpc()
                 elif self.method == "lqr":
