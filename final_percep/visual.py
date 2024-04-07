@@ -139,7 +139,8 @@ class Visual:
         self.map = np.array(data).reshape(msg.info.height, msg.info.width)
 
     def goal_callback(self, msg):
-        self.goal = msg.data
+        if msg.data[: 4] == '/box':
+            self.goal = msg.data[-1]
 
     def scan_callback(self, msg):
         self.scan = msg.ranges
