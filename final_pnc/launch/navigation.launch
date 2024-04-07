@@ -1,0 +1,38 @@
+<launch>
+
+  <arg name="enable_teleop" default="false" />
+  <arg name="localization" value="carto" doc="amcl,gt,carto" />
+
+  <group if="$(arg enable_teleop)">
+    <node name="teleop_twist_keyboard" pkg="teleop_twist_keyboard" type="teleop_twist_keyboard.py"
+      output="screen" respawn="false">
+      <param name="repeat_rate" type="double" value="10.0" />
+    </node>
+  </group>
+
+  <!-- Run the map server -->
+  <arg name="map_file" default="$(find final_slam)/maps/final_map_2d.yaml" />
+  <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" />
+
+  <group if="$(eval localization == 'amcl')">
+    <include file="$(find final_slam)/launch/amcl.launch" />
+  </group>
+  <group if="$(eval localization == 'gt')">
+    <node pkg="tf2_ros" type="static_transform_publisher" name="map2odom"
+      args="0 0 0 0 0 0 map odom" />
+    <node pkg="final_slam" type="get_gt_odom.py" name="get_gt_odom" output="screen" />
+  </group>
+
+  <!-- Launch Move Base -->
+  <include file="$(find final_pnc)/launch/move_base.launch" />
+
+  <!-- <node type="rrt_planner_node" name="rrt_planner" pkg="final_pnc" output="screen"/> -->
+
+  <!-- Launch Rviz with our settings -->
+  <node type="rviz" name="rviz" pkg="rviz" args="-d $(find final_pnc)/config/navigation.rviz"
+    output="log" respawn="false" launch-prefix="bash -c 'sleep 0.5; $0 $@';" />
+
+  <node ns="me5413_world" pkg="me5413_world" type="goal_publisher_node" name="goal_publisher_node"
+    output="screen" launch-prefix="bash -c 'sleep 1; $0 $@';" />
+
+</launch>
