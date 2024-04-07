@@ -4,6 +4,8 @@
     <param name="repeat_rate" value="10.0"/>
   </node>
 
+  <node name="pose2odom" pkg="final_slam" type="pose2odom.py" output="screen"/>
+
   <!-- Launch Cartographer -->
   <include file="$(find cartographer_ros)/launch/ME5413_final_localization_2d.launch" />
 
