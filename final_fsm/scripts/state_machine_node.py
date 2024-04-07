@@ -73,6 +73,9 @@ class Task1ToTask2(State):
                 # self.curr_phase = 3
                 self.robot.pub_percept_red.publish(True)
                 self.robot.percept_wait = "red"
+
+            if self.robot.percept_wait == "red":
+                self.robot.pub_percept_red.publish(True)
         pass
         
 class Task2Entry(State):
@@ -202,12 +205,14 @@ class Robot:
         self.pose_map_goal = goal_pose
 
     def percep_red_callback(self, data):
+        rospy.loginfo("Perception: %s", data.data)
         if self.percept_wait != "red":
             return
+        
         if data.data == "true":
             self.set_state(self.task2_entry_state, True)
             self.percept_wait = ""
-        else:
+        elif data.data == "false":
             self.set_state(self.task2_entry_state, False)
             self.percept_wait = ""
 
@@ -277,7 +282,7 @@ if __name__ == '__main__':
 
         except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException) as ex:
             pass
-
+        
             
         robot.execute_state()
         rate.sleep()
