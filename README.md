@@ -4,7 +4,7 @@
 
 ```shell
 .
-├── final_nav # Navigation package
+├── final_pnc # Navigation package
 ├── final_percep # Perception package
 ├── final_slam # SLAM package
 ├── interactive_tools
@@ -58,7 +58,7 @@ roslaunch final_slam mapping_carto.launch
 - navigation
 ```shell
 roslaunch me5413_world world.launch
-roslaunch final_nav navigation.launch
+roslaunch final_pnc navigation.launch
 ```
 
 

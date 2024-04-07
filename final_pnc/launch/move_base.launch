@@ -1,0 +1,41 @@
+<launch>
+
+  <arg name="local_planner" value="mpc" doc="base, dwa, teb, mpc" />
+
+  <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
+
+    <rosparam file="$(find final_pnc)/config/map_params/costmap_common_params.yaml" command="load"
+      ns="global_costmap" />
+    <rosparam file="$(find final_pnc)/config/map_params/costmap_common_params.yaml" command="load"
+      ns="local_costmap" />
+
+    <rosparam file="$(find final_pnc)/config/map_params/local_costmap_params.yaml" command="load" />
+    <rosparam file="$(find final_pnc)/config/map_params/global_costmap_params.yaml" command="load" />
+
+
+    <rosparam file="$(find final_pnc)/config/nav_params/move_base_params.yaml" command="load" />
+    <!-- <param name="base_global_planner" type="string" value="navfn/NavfnROS" /> -->
+    
+    <param name="base_global_planner" type="string" value="graph_planner/GraphPlanner" />
+    <param name="GraphPlanner/planner_name" value="hybrid_a_star" />
+    <rosparam file="$(find sim_env)/config/planner/graph_planner_params.yaml" command="load" />
+
+    <rosparam file="$(find final_pnc)/config/nav_params/base_local_planner_params.yaml"
+    command="load" />
+    <param name="base_local_planner" value="base_local_planner/TrajectoryPlannerROS" />
+
+    <!-- <rosparam file="$(find final_pnc)/config/nav_params/dwa.yaml" command="load" />
+    <param name="base_local_planner" value="dwa_local_planner/DWAPlannerROS" /> -->
+
+    <!-- <rosparam file="$(find final_pnc)/config/nav_params/teb.yaml" command="load" />
+    <param name="base_local_planner" value="teb_local_planner/TebLocalPlannerROS" /> -->
+
+    <remap from="cmd_vel" to="dummy_cmd_vel" />
+
+  </node>
+
+  <group if="$(eval local_planner == 'mpc')">
+    <node pkg="final_pnc" type="nmpc_node.py" name="nmpc_node" output="screen" respawn="true" />
+  </group>
+
+</launch>

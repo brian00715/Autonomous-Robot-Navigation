@@ -21,15 +21,15 @@
     <node pkg="tf2_ros" type="static_transform_publisher" name="map2odom"
       args="0 0 0 0 0 0 map odom" />
     <node pkg="final_slam" type="get_gt_odom.py" name="get_gt_odom" output="screen" />
-    <!-- <node pkg="tf" type="static_transform_publisher" name="map2odom"
-      args="0 0 0 0 0 0 1 map odom 100" /> -->
   </group>
 
   <!-- Launch Move Base -->
-  <include file="$(find final_nav)/launch/move_base.launch" />
+  <include file="$(find final_pnc)/launch/move_base.launch" />
+
+  <!-- <node type="rrt_planner_node" name="rrt_planner" pkg="final_pnc" output="screen"/> -->
 
   <!-- Launch Rviz with our settings -->
-  <node type="rviz" name="rviz" pkg="rviz" args="-d $(find final_nav)/config/navigation.rviz"
+  <node type="rviz" name="rviz" pkg="rviz" args="-d $(find final_pnc)/config/navigation.rviz"
     output="log" respawn="false" launch-prefix="bash -c 'sleep 0.5; $0 $@';" />
 
   <node ns="me5413_world" pkg="me5413_world" type="goal_publisher_node" name="goal_publisher_node"

@@ -1,4 +1,12 @@
 #!/usr/bin/env python3
+'''
+ # @ Author: Kuankuan Sima
+ # @ Email: smkk00715@gmail.com
+ # @ Create Time: 2024-04-06 23:19:59
+ # @ Modified time: 2024-04-07 14:00:05
+ # @ Description:
+ '''
+
 
 import math
 import os
@@ -14,6 +22,7 @@ from dynamic_reconfigure.server import Server as DynServer
 from geometry_msgs.msg import Pose, PoseArray, PoseStamped, Twist
 from nav_msgs.msg import Odometry, Path
 from nmpc_controller import NMPCC
+from std_msgs.msg import Bool
 from utils import (
     euclidian_dist_se2,
     extract_interpolated_path,
@@ -53,6 +62,8 @@ class NMPCNode:
         self.enable_plan = False
         config_path = os.path.join(sys.path[0], "../config/nav_params/mpc.yaml")
         param_dict = yaml.safe_load(open(config_path, "r"))
+        self.ref_path_topic = param_dict["ref_path_topic"]
+        self.odom_topic = param_dict["odom_topic"]
         self.arrive_th = param_dict["arrive_th"]
         self.vel_ref = param_dict["vel_ref"]
         self.rot_th = np.deg2rad(param_dict["rot_th"])
@@ -89,19 +100,21 @@ class NMPCNode:
             self.dt = 0.1
 
         self.curr_odom = Odometry()
-        self.local_ref_path = None
+        self.ref_path = None
+        self.actual_ref_path = None # interpolated path from the original reference path given the MPC parameters
         self.curr_pose = None
-        self.global_path = None
         self.goal_pose = PoseStamped()
 
         # ROS related
-        self.sub_robot_odom = rospy.Subscriber("/gazebo/ground_truth/state", Odometry, self.robot_odom_callback)
+        # pubs
         self.pub_cmd_vel = rospy.Publisher("/cmd_vel", Twist, queue_size=1)
-        # self.local_path_sub = rospy.Subscriber("/me5413_world/planning/local_path", Path, self.local_path_callback)
-        self.global_path_sub = rospy.Subscriber("/move_base/NavfnROS/plan", Path, self.global_path_callback)
-        self.pred_pose_pub = rospy.Publisher("/final_nav/mpc/pred_pose", PoseArray, queue_size=1)
-        self.local_ref_path_pub = rospy.Publisher("/final_nav/mpc/local_path", Path, queue_size=1)
+        self.pred_pose_pub = rospy.Publisher("/final_pnc/mpc/pred_pose", PoseArray, queue_size=1)
+        self.actual_ref_path_pub = rospy.Publisher("/final_pnc/mpc/actual_ref_path", Path, queue_size=1)
+        # subs
+        self.odom_sub = rospy.Subscriber(self.odom_topic, Odometry, self.robot_odom_callback)
+        self.ref_path_sub = rospy.Subscriber(self.ref_path_topic, Path, self.ref_path_callback)
         self.goal_pose_sub = rospy.Subscriber("/move_base_simple/goal", PoseStamped, self.goal_pose_callback)
+        self.reach_pub = rospy.Publisher("/final_pnc/reach_goal", Bool, queue_size=1)
         # self.dyn_client = DynServer(path_publisherConfig, self.dyn_callback)
 
     def goal_pose_callback(self, msg: PoseStamped):
@@ -109,13 +122,13 @@ class NMPCNode:
         self.goal_pose = msg
         rospy.loginfo(f"New goal {(msg.pose.position.x,msg.pose.position.y,quat2yaw(msg.pose.orientation))} received!")
 
-    def global_path_callback(self, msg: Path):
-        self.global_path = msg
+    def ref_path_callback(self, msg: Path):
+        self.ref_path = msg
         if self.enable_plan:
-            self.local_ref_path = extract_interpolated_path(msg, self.T, self.N + 1, self.vel_ref)
+            self.actual_ref_path = extract_interpolated_path(msg, self.T, self.N + 1, self.vel_ref)
 
     def find_nearest_point(self):
-        if self.global_path is None or self.curr_pose is None:
+        if self.ref_path is None or self.curr_pose is None:
             return None
 
         min_dist = float("inf")
@@ -123,7 +136,7 @@ class NMPCNode:
         robot_x, robot_y = self.curr_pose[0], self.curr_pose[1]
         robot_heading = self.curr_pose[2]
 
-        for i, pose in enumerate(self.global_path.poses):
+        for i, pose in enumerate(self.ref_path.poses):
             point_x, point_y = pose.pose.position.x, pose.pose.position.y
             base2point_yaw = math.atan2(point_y - robot_y, point_x - robot_x)
             dist = math.sqrt((point_x - robot_x) ** 2 + (point_y - robot_y) ** 2)
@@ -195,10 +208,7 @@ class NMPCNode:
         # self.output_tum_format(odom)
 
     def local_path_callback(self, msg: Path):
-        # self.pose_world_goal_ = path.pose[11].pose
-        # self.pose_world_goal_ 应该包含后续一段时间内的路径规划信息
-        # goal_poses = [pose.pose.position for pose in path.poses]
-        self.local_ref_path = [
+        self.actual_ref_path = [
             [
                 msg.poses[i].pose.position.x,
                 msg.poses[i].pose.position.y,
@@ -210,22 +220,22 @@ class NMPCNode:
         #     self.local_ref_path += [self.local_ref_path[-1]] * (self.N + 1 - len(self.local_ref_path))
 
         if self.curr_pose is not None:
-            for i in range(len(self.local_ref_path)):
+            for i in range(len(self.actual_ref_path)):
                 # if self.local_ref_path[i][2] < -math.pi:
                 #     self.local_ref_path[i][2] += math.pi
                 # if self.local_ref_path[i][2] > math.pi:
                 #     self.local_ref_path[i][2] -= math.pi
-                diff = self.local_ref_path[i][2] - self.curr_pose[2]
+                diff = self.actual_ref_path[i][2] - self.curr_pose[2]
                 while diff > math.pi:
                     diff -= 2 * math.pi
                     diff += 2 * math.pi
-                self.local_ref_path[i][2] = self.curr_pose[2] + diff
+                self.actual_ref_path[i][2] = self.curr_pose[2] + diff
 
     def compute_cmd_vel_mpc(self):
-        if self.local_ref_path is None:
+        if self.actual_ref_path is None:
             return
 
-        mpc_ref_path = path2ndarray_se2(self.local_ref_path)
+        mpc_ref_path = path2ndarray_se2(self.actual_ref_path)
         u = self.controller.solve(self.curr_pose, mpc_ref_path, [[self.vel_ref, 0]] * self.N)
         x_pred = self.controller.x_opti
         pose_array = PoseArray()
@@ -253,10 +263,10 @@ class NMPCNode:
         return K
 
     def compute_cmd_vel_lqr(self):
-        if self.local_ref_path is None or len(self.local_ref_path) == 0:
+        if self.actual_ref_path is None or len(self.actual_ref_path) == 0:
             return Twist()
 
-        ref_pose = self.local_ref_path[0]
+        ref_pose = self.actual_ref_path[0]
         x_ref, y_ref, yaw_ref = ref_pose[0], ref_pose[1], ref_pose[2]
         x, y, yaw = self.curr_pose[0], self.curr_pose[1], self.curr_pose[2]
 
@@ -281,8 +291,8 @@ class NMPCNode:
     def run(self):
         rate = rospy.Rate(self.freq)
         while not rospy.is_shutdown():
-            if self.local_ref_path is not None and self.curr_pose is not None and self.enable_plan:
-                first_point = pose2ndarray_se2(self.local_ref_path.poses[0].pose)
+            if self.actual_ref_path is not None and self.curr_pose is not None and self.enable_plan:
+                first_point = pose2ndarray_se2(self.actual_ref_path.poses[0].pose)
                 if abs(self.curr_pose[2] - first_point[2]) > math.pi:
                     if self.curr_pose[2] > first_point[2]:
                         self.curr_pose[2] -= 2 * math.pi
@@ -298,9 +308,11 @@ class NMPCNode:
                 if euclidian_dist_se2(ndarray2pose_se2(self.curr_pose), self.goal_pose.pose) < self.arrive_th:
                     self.enable_plan = False
                     cmd_vel = Twist()
+                    self.pub_cmd_vel.publish(cmd_vel) # stop immediately
+                    self.reach_pub.publish(Bool(True))
                     rospy.loginfo("Goal reached!")
                 self.pub_cmd_vel.publish(cmd_vel)
-                self.local_ref_path_pub.publish(self.local_ref_path)
+                self.actual_ref_path_pub.publish(self.actual_ref_path)
             rate.sleep()
 
 

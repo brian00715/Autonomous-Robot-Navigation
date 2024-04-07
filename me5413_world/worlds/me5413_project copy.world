@@ -4300,10 +4300,10 @@
       </link>
     </model>
     <state world_name='default'>
-      <sim_time>0</sim_time>
-      <real_time>0</real_time>
-      <wall_time>0</wall_time>
-      <iterations>0</iterations>
+      <sim_time>5045 251000000</sim_time>
+      <real_time>5055 576242539</real_time>
+      <wall_time>1709020030 51340760</wall_time>
+      <iterations>5045251</iterations>
       <model name='24fall_finalproject'>
         <pose frame=''>8.55103 -5.1631 0 0 -0 0</pose>
         <scale>1 1 1</scale>

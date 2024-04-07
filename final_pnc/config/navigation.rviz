@@ -109,8 +109,8 @@ Visualization Manager:
         - Alpha: 1
           Autocompute Intensity Bounds: true
           Autocompute Value Bounds:
-            Max Value: 6.162012577056885
-            Min Value: -1.048966646194458
+            Max Value: 5.822256088256836
+            Min Value: -1.0489802360534668
             Value: true
           Axis: X
           Channel Name: intensity
@@ -173,13 +173,16 @@ Visualization Manager:
           Unreliable: false
           Value: false
           Visibility:
+            "": true
             Evaluation:
               "": true
               Value: true
             Grid: true
             InteractiveMarkers: true
             Localization:
-              "": true
+              AMCL PoseArray: true
+              AMCL PoseWithCovariance: true
+              Map: true
               Value: true
             Planning:
               "": true
@@ -566,72 +569,12 @@ Visualization Manager:
       Use rainbow: true
       Value: false
     - Class: rviz/TF
-      Enabled: true
+      Enabled: false
       Filter (blacklist): ""
       Filter (whitelist): ""
       Frame Timeout: 15
       Frames:
         All Enabled: false
-        base_link:
-          Value: true
-        chassis_link:
-          Value: false
-        front_camera:
-          Value: false
-        front_camera_beam:
-          Value: false
-        front_camera_mount:
-          Value: false
-        front_camera_optical:
-          Value: false
-        front_fender_link:
-          Value: false
-        front_left_wheel_link:
-          Value: false
-        front_mount:
-          Value: false
-        front_right_wheel_link:
-          Value: false
-        imu_link:
-          Value: false
-        map:
-          Value: true
-        mid_mount:
-          Value: false
-        mid_vlp16_leg1:
-          Value: false
-        mid_vlp16_leg2:
-          Value: false
-        mid_vlp16_leg3:
-          Value: false
-        mid_vlp16_leg4:
-          Value: false
-        mid_vlp16_mount:
-          Value: false
-        mid_vlp16_plate:
-          Value: false
-        navsat_link:
-          Value: false
-        odom:
-          Value: true
-        rear_fender_link:
-          Value: false
-        rear_left_wheel_link:
-          Value: false
-        rear_mount:
-          Value: false
-        rear_right_wheel_link:
-          Value: false
-        tim551:
-          Value: false
-        tim551_mount_link:
-          Value: false
-        velodyne:
-          Value: false
-        velodyne_base_link:
-          Value: false
-        world:
-          Value: false
       Marker Alpha: 1
       Marker Scale: 1
       Name: TF
@@ -639,55 +582,9 @@ Visualization Manager:
       Show Axes: true
       Show Names: true
       Tree:
-        map:
-          odom:
-            base_link:
-              chassis_link:
-                front_fender_link:
-                  {}
-                front_left_wheel_link:
-                  {}
-                front_right_wheel_link:
-                  {}
-                imu_link:
-                  {}
-                mid_mount:
-                  front_mount:
-                    front_camera_mount:
-                      front_camera_beam:
-                        front_camera:
-                          front_camera_optical:
-                            {}
-                    tim551_mount_link:
-                      tim551:
-                        {}
-                  mid_vlp16_mount:
-                    mid_vlp16_leg1:
-                      {}
-                    mid_vlp16_leg2:
-                      {}
-                    mid_vlp16_leg3:
-                      {}
-                    mid_vlp16_leg4:
-                      {}
-                    mid_vlp16_plate:
-                      velodyne_base_link:
-                        velodyne:
-                          {}
-                  rear_mount:
-                    {}
-                navsat_link:
-                  {}
-                rear_fender_link:
-                  {}
-                rear_left_wheel_link:
-                  {}
-                rear_right_wheel_link:
-                  {}
-              world:
-                {}
+        {}
       Update Interval: 0
-      Value: true
+      Value: false
     - Class: rviz/Group
       Displays:
         - Alpha: 1
@@ -711,7 +608,7 @@ Visualization Manager:
           Radius: 0.029999999329447746
           Shaft Diameter: 0.10000000149011612
           Shaft Length: 0.10000000149011612
-          Topic: /final_nav/mpc/local_path
+          Topic: /final_pnc/mpc/local_path
           Unreliable: false
           Value: true
         - Alpha: 1
@@ -728,11 +625,35 @@ Visualization Manager:
           Shaft Length: 0.10000000149011612
           Shaft Radius: 0.029999999329447746
           Shape: Axes
-          Topic: /final_nav/mpc/pred_pose
+          Topic: /final_pnc/mpc/pred_pose
           Unreliable: false
           Value: true
       Enabled: true
       Name: mpc
+    - Alpha: 1
+      Buffer Length: 1
+      Class: rviz/Path
+      Color: 25; 255; 0
+      Enabled: true
+      Head Diameter: 0.30000001192092896
+      Head Length: 0.20000000298023224
+      Length: 0.30000001192092896
+      Line Style: Lines
+      Line Width: 0.029999999329447746
+      Name: Path
+      Offset:
+        X: 0
+        Y: 0
+        Z: 0
+      Pose Color: 255; 85; 255
+      Pose Style: None
+      Queue Size: 10
+      Radius: 0.029999999329447746
+      Shaft Diameter: 0.10000000149011612
+      Shaft Length: 0.10000000149011612
+      Topic: /move_base/GraphPlanner/plan
+      Unreliable: false
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -761,7 +682,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/ThirdPersonFollower
-      Distance: 21.321380615234375
+      Distance: 7.557486534118652
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -769,8 +690,8 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 8.897294998168945
-        Y: -5.451450824737549
+        X: 5.919345378875732
+        Y: -1.6914477348327637
         Z: -1.9073486328125e-06
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806

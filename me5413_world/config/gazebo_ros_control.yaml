@@ -1,0 +1,18 @@
+/gazebo_ros_control:
+  pid_gains:
+    rear_right_wheel:
+      p: 50000.0
+      i: 0.01
+      d: 10.0
+    rear_left_wheel:
+      p: 50000.0
+      i: 0.01
+      d: 10.0
+    front_right_wheel:
+      p: 50000.0
+      i: 0.01
+      d: 10.0
+    front_left_wheel:
+      p: 50000.0
+      i: 0.01
+      d: 10.0
