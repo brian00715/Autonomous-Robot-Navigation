@@ -115,9 +115,9 @@ TRAJECTORY_BUILDER_3D.submaps.num_range_data = 500 -- 注意和optimize_every_n_
 TRAJECTORY_BUILDER_3D.voxel_filter_size = 0.01
 TRAJECTORY_BUILDER_3D.ceres_scan_matcher.rotation_weight = 0.1
 
-MAP_BUILDER.num_background_threads = 5
+MAP_BUILDER.num_background_threads = 10
 POSE_GRAPH.optimization_problem.huber_scale = 5e2
-POSE_GRAPH.optimize_every_n_nodes = 10
+POSE_GRAPH.optimize_every_n_nodes = 1000
 POSE_GRAPH.constraint_builder.sampling_ratio = 0.03
 POSE_GRAPH.optimization_problem.ceres_solver_options.max_num_iterations = 16
 POSE_GRAPH.constraint_builder.min_score = 0.95
