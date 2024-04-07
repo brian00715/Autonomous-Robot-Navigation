@@ -10,7 +10,7 @@ from sensor_msgs.msg import Image, CameraInfo, LaserScan
 import easyocr
 from geometry_msgs.msg import PoseStamped
 from nav_msgs.msg import OccupancyGrid
-from std_msgs.msg import String
+from std_msgs.msg import String, Bool
 from cv_bridge import CvBridge
 import cv2
 import numpy as np
@@ -26,7 +26,8 @@ class Visual:
         self.redcheck = False
         self.bridge = CvBridge()
         self.pubpose = rospy.Publisher('/percep/pose', PoseStamped, queue_size=10)
-        self.pubid = rospy.Publisher('/percep/id', String, queue_size=10)
+        self.percepnums = '0'*10
+        self.pubid = rospy.Publisher('/percep/numbers', String, queue_size=10)
         self.camera_info = rospy.wait_for_message('/front/camera_info', CameraInfo)
         self.intrinsic = np.array(self.camera_info.K).reshape(3, 3)
         self.projection = np.array(self.camera_info.P).reshape(3, 4)
@@ -35,11 +36,11 @@ class Visual:
         self.reader = easyocr.Reader(['en'])
         self.listener = tf.TransformListener()
         self.scansub = rospy.Subscriber('/front/scan', LaserScan, self.scan_callback)
-        self.poselists = np.zeros((9, 2))
+        self.numberposelists = np.zeros((10, 2))
         # self.mapsub = rospy.Subscriber('/map', OccupancyGrid, self.map_callback)
         self.goalsub = rospy.Subscriber('/goal', String, self.goal_callback)
         self.sub = rospy.Subscriber('/front/image_raw', Image, self.callback)
-        self.redcmdsub = rospy.Subscriber('/redcmd', String, self.redcmd_callback)
+        self.redcmdsub = rospy.Subscriber('/redcmd', Bool, self.redcmd_callback)
         self.redpub = rospy.Publisher('/percep/red', String, queue_size=10)
         rospy.spin()
 
@@ -63,7 +64,7 @@ class Visual:
             for detection in result:
                 if len(detection[1]) > 1:
                     continue
-                if detection[2] < 0.95:
+                if detection[2] < 0.97:
                     continue
                 if detection[1] < '1' or detection[1] > '9':
                     continue
@@ -105,9 +106,16 @@ class Visual:
                 point_p.pose.position.z = 0
                 point_p.pose.orientation.w = 1
 
+                # Save the position of the number
+                numberpose = np.array([x, y])
+                idx = int(detection[1])
+                self.numberposelists[idx] = numberpose if self.numberposelists[idx, 0] == 0 \
+                    and self.numberposelists[idx, 1] == 0 else self.numberposelists[idx] * 0.9 + numberpose * 0.1
+                self.percepnums[idx] = 1
+
                 # Pulish the direction and the id of the object
                 #self.pubpose.publish(transformed)
-                self.pubid.publish(detection[1])
+                self.pubid.publish(self.percepnums)
                 self.pubpose.publish(point_p)
             
 
@@ -115,7 +123,7 @@ class Visual:
         self.is_processing = False
 
     def redcmd_callback(self, msg):
-        self.redcheck = True if msg.data == 'true' else False
+        self.redcheck = msg.data
 
     def map_callback(self, msg):
         data = list(msg.data)
