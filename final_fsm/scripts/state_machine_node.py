@@ -15,8 +15,11 @@ init_arg = None
 
 # determine whether the robot have reached the goal
 def is_goal_reached(goal_pose_stamped, robot_pose_stamped):
+    if robot_pose_stamped is None or goal_pose_stamped is None:
+        return False
     if abs(goal_pose_stamped.pose.position.x - robot_pose_stamped.pose.position.x) < 0.1 and abs(goal_pose_stamped.pose.position.y - robot_pose_stamped.pose.position.y) < 0.1:
         return True
+    return False
 
 class State:
     def __init__(self, robot):
