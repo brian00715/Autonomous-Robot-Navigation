@@ -38,9 +38,9 @@ class Visual:
         self.scansub = rospy.Subscriber('/front/scan', LaserScan, self.scan_callback)
         self.numberposelists = np.zeros((10, 2))
         # self.mapsub = rospy.Subscriber('/map', OccupancyGrid, self.map_callback)
-        self.goalsub = rospy.Subscriber('/goal', String, self.goal_callback)
+        self.goalsub = rospy.Subscriber('/rviz_panel/goal_name', String, self.goal_callback)
+        self.redcmdsub = rospy.Subscriber('/percep/cmd', String, self.redcmd_callback)
         self.sub = rospy.Subscriber('/front/image_raw', Image, self.callback)
-        self.redcmdsub = rospy.Subscriber('/redcmd', Bool, self.redcmd_callback)
         self.redpub = rospy.Publisher('/percep/red', String, queue_size=10)
         rospy.spin()
 
@@ -48,8 +48,11 @@ class Visual:
         if self.is_processing:
             return
         self.is_processing = True
+        if self.redcheck == 'idle':
+            self.is_processing = False
+            return
         cv_image = self.bridge.imgmsg_to_cv2(msg, 'bgr8')
-        if self.redcheck:
+        if self.redcheck == 'red':
             hsv_image = cv2.cvtColor(cv_image, cv2.COLOR_BGR2HSV)
             lower_red = np.array([0, 100, 100])
             upper_red = np.array([10, 255, 255])
@@ -58,7 +61,7 @@ class Visual:
                 self.redpub.publish('true')
             else:
                 self.redpub.publish('false')
-        else :
+        elif self.redcheck == 'number':
             gray = cv2.cvtColor(cv_image, cv2.COLOR_BGR2GRAY)
             result = self.reader.readtext(gray)
             for detection in result:
@@ -116,7 +119,18 @@ class Visual:
                 # Pulish the direction and the id of the object
                 #self.pubpose.publish(transformed)
                 self.pubid.publish(self.percepnums)
-                self.pubpose.publish(point_p)
+                if self.percepnums[int(self.goal)] == '1':
+                    goal_x = self.numberposelists[int(self.goal), 0]
+                    goal_y = self.numberposelists[int(self.goal), 1]
+                    goal_p = PoseStamped()
+                    goal_p.header.frame_id = 'tim551'
+                    goal_p.pose.position.x = goal_x
+                    goal_p.pose.position.y = goal_y
+                    goal_p.pose.position.z = 0
+                    goal_p.pose.orientation.w = 1
+                    self.pubpose.publish(goal_p)
+
+                #self.pubpose.publish(point_p)
             
 
             
