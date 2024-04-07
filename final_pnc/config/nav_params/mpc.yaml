@@ -5,9 +5,9 @@ freq: 10 # control frequency
 T: 0.05 # forward time step
 N: 20 # number of prediction steps
 arrive_th: 0.5 # circular region around the goal
-vel_ref: 2 # reference velocity, used both for trajecgory interpolation and mpc solving
-max_vel: 2
-max_omega: 2
+vel_ref: 1.2 # 2 reference velocity, used both for trajecgory interpolation and mpc solving
+max_vel: 1.2 # 2
+max_omega: 1 # 2
 max_lin_acc: 15 # 20
 max_ang_acc: 10 # 25
 rot_th: 45 # degree. rotate in place if the yaw error is less than

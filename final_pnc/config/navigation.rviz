@@ -9,7 +9,7 @@ Panels:
         - /TF1/Frames1
         - /mpc1/PoseArray1
       Splitter Ratio: 0.6628242135047913
-    Tree Height: 633
+    Tree Height: 354
   - Class: rviz/Selection
     Name: Selection
   - Class: rviz/Tool Properties
@@ -109,8 +109,8 @@ Visualization Manager:
         - Alpha: 1
           Autocompute Intensity Bounds: true
           Autocompute Value Bounds:
-            Max Value: 5.822256088256836
-            Min Value: -1.0489802360534668
+            Max Value: 6.1418609619140625
+            Min Value: -1.027380108833313
             Value: true
           Axis: X
           Channel Name: intensity
@@ -173,17 +173,15 @@ Visualization Manager:
           Unreliable: false
           Value: false
           Visibility:
-            "": true
             Evaluation:
               "": true
               Value: true
             Grid: true
             InteractiveMarkers: true
             Localization:
-              AMCL PoseArray: true
-              AMCL PoseWithCovariance: true
-              Map: true
+              "": true
               Value: true
+            Path: true
             Planning:
               "": true
               Value: true
@@ -682,7 +680,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/ThirdPersonFollower
-      Distance: 7.557486534118652
+      Distance: 20.95750617980957
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -690,8 +688,8 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 5.919345378875732
-        Y: -1.6914477348327637
+        X: 8.67646598815918
+        Y: -2.2607786655426025
         Z: -1.9073486328125e-06
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
