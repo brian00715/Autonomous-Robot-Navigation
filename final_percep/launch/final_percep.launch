@@ -1,0 +1,3 @@
+ <launch>
+    <node name="visual" pkg="final_percep" type="visual.py"/>
+ </launch>
