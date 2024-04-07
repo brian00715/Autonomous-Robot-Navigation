@@ -69,8 +69,27 @@ class Task1ToTask2(State):
                 self.curr_phase = 2
                 self.goal_pose = robot.get_goal_pose_from_config_map("/task1_crossing_1")
                 self.robot.pub_goal.publish(self.goal_pose)
+            elif self.curr_phase == 2:
+                # self.curr_phase = 3
+                self.robot.pub_percept_red.publish(True)
+                self.robot.percept_wait = "red"
         pass
         
+class Task2Entry(State):
+    def init(self, args):
+        if args:
+            self.goal_pose = robot.get_goal_pose_from_config_map("/task2_entry_1")
+            self.robot.pub_goal.publish(self.goal_pose)
+        else:
+            self.goal_pose = robot.get_goal_pose_from_config_map("/task2_entry_2")
+            self.robot.pub_goal.publish(self.goal_pose)
+
+    def execute(self):
+        if is_goal_reached(self.goal_pose, self.robot.robot_pose):
+            rospy.loginfo("Goal Reached")
+            self.robot.set_state(self.robot.idle_state)
+        pass
+    
 
 class Task2State(State):
     def __init__(self, robot):
@@ -79,11 +98,7 @@ class Task2State(State):
 
     def init(self, arg):
         pub_explore.publish(True)
-        # uuid = roslaunch.rlutil.get_or_generate_uuid(None, False)
-        # roslaunch.configure_logging(uuid)
-        # launch = roslaunch.parent.ROSLaunchParent(uuid, ["/home/luyi/catkin_ws/src/ME5413_Final_Project/final_fsm/explore.launch"])
-        # launch.start()
-        # self.process = launch
+
 
     def execute(self):
         pass
@@ -115,6 +130,11 @@ class Robot:
         self.sub_robot_odom = rospy.Subscriber("/gazebo/ground_truth/state", PoseStamped, self.robot_odom_callback)
         self.sub_goal_name = rospy.Subscriber("/rviz_panel/goal_name", String, self.goal_name_callback)
         self.sub_goal_pose = rospy.Subscriber("/move_base_simple/goal", PoseStamped, self.goal_pose_callback)
+
+        # Publisher and subscriber for perception
+        self.percept_wait = ""
+        self.pub_percept_red = rospy.Publisher("/redcmd", Bool, queue_size=1)
+        self.sub_percept_red = rospy.Subscriber("/percep/red", String, self.percep_red_callback)
         
         # Initialization
         self.robot_frame = "base_link"
@@ -127,6 +147,7 @@ class Robot:
         self.idle_state = IdleState(self)
         self.task1_state = Task1Tracking(self)
         self.task1_to_task2_state = Task1ToTask2(self)
+        self.task2_entry_state = Task2Entry(self)
         self.task2_state = Task2State(self)
         self.task3_state = Task3Tracking(self)
         self.current_state = self.idle_state
@@ -180,6 +201,16 @@ class Robot:
     def goal_pose_callback(self, goal_pose):
         self.pose_map_goal = goal_pose
 
+    def percep_red_callback(self, data):
+        if self.percept_wait != "red":
+            return
+        if data.data == "true":
+            self.set_state(self.task2_entry_state, True)
+            self.percept_wait = ""
+        else:
+            self.set_state(self.task2_entry_state, False)
+            self.percept_wait = ""
+
     def get_goal_pose_from_config_map(self, name):
         P_world_goal = self.get_goal_pose_from_config(name)
 
@@ -200,7 +231,6 @@ class Robot:
         # Transform the robot pose to map frame
         self.pose_map_robot = tf2_geometry_msgs.do_transform_pose(self.pose_world_robot, transform_map_world)
         return P_map_goal
-
 
     def get_goal_pose_from_config(self, name):
         """ 

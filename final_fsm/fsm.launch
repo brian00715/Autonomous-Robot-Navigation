@@ -3,7 +3,7 @@
   <!-- Connect the robot to a keyboard teleop controller -->
   <!-- <node name="teleop_twist_keyboard" pkg="teleop_twist_keyboard" type="teleop_twist_keyboard.py" output="screen" respawn="true"/> -->
   <!-- Run the map server -->
-  <arg name="map_file" default="$(find final_slam)/maps/final_map_2d.yaml"/>
+  <arg name="map_file" default="$(find final_slam)/maps/final_map_2d_processed.yaml"/>
   <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" />
 
   <!-- Launch Gmapping -->
