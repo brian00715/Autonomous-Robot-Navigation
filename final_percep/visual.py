@@ -4,7 +4,7 @@
 # Publish the result to new topic
 
 import rospy
-from sensor_msgs.msg import Image, CameraInfo
+from sensor_msgs.msg import Image, CameraInfo, LaserScan
 import easyocr
 from geometry_msgs.msg import PoseStamped
 from nav_msgs.msg import OccupancyGrid
@@ -13,12 +13,14 @@ from cv_bridge import CvBridge
 import cv2
 import numpy as np
 import tf
+import tf2_ros
 from tf.transformations import euler_from_quaternion
 
 
 class Visual:
     def __init__(self):
         rospy.init_node('visual')
+        self.is_processing = False
         self.bridge = CvBridge()
         self.pubpose = rospy.Publisher('/percep/pose', PoseStamped, queue_size=10)
         self.pubid = rospy.Publisher('/percep/id', String, queue_size=10)
@@ -29,10 +31,10 @@ class Visual:
         self.frame = self.camera_info.header.frame_id
         self.reader = easyocr.Reader(['en'])
         self.listener = tf.TransformListener()
-        self.sub = rospy.Subscriber('/front/image_raw', Image, self.callback)
-        self.mapsub = rospy.Subscriber('/map', OccupancyGrid, self.map_callback)
+        self.scansub = rospy.Subscriber('/front/scan', LaserScan, self.scan_callback)
+        # self.mapsub = rospy.Subscriber('/map', OccupancyGrid, self.map_callback)
         self.goalsub = rospy.Subscriber('/goal', String, self.goal_callback)
-        self.is_processing = False
+        self.sub = rospy.Subscriber('/front/image_raw', Image, self.callback)
         rospy.spin()
 
     def callback(self, msg):
@@ -45,7 +47,7 @@ class Visual:
         for detection in result:
             if len(detection[1]) > 1:
                 continue
-            if detection[2] < 0.9:
+            if detection[2] < 0.95:
                 continue
             if detection[1] < '1' or detection[1] > '9':
                 continue
@@ -67,19 +69,37 @@ class Visual:
             cur_p.pose.orientation.w = 1
 
             # Transform the direction to other frame
-            transformed = self.listener.transformPose('map', cur_p)
+            transformed = self.listener.transformPose('tim551', cur_p)
 
             # Pulish the direction and the id of the object
-            self.pubpose.publish(transformed)
+            #self.pubpose.publish(transformed)
             self.pubid.publish(detection[1])
 
-            # Get the position and orientation of the camera wrt the map from the tf
-            campos = np.array(self.listener.lookupTransform('map', 'front_camera_mount', rospy.Time(0))[0])
-            camori = np.array(self.listener.lookupTransform('map', 'front_camera_mount', rospy.Time(0))[1])
+            # # Get the position and orientation of the camera wrt the map from the tf
+            # campos = np.array(self.listener.lookupTransform('map', 'front_camera_mount', rospy.Time(0))[0])
+            # camori = np.array(self.listener.lookupTransform('map', 'front_camera_mount', rospy.Time(0))[1])
 
-            # Get the euler angles from the quaternion
-            euler = euler_from_quaternion(camori)
-            yaw = euler[2]
+            # # Get the euler angles from the quaternion
+            # euler = euler_from_quaternion(camori)
+            # yaw = euler[2]
+
+            # Calculate the yaw of the transformed result in current frame
+            yaw = np.arctan2(transformed.pose.position.y, transformed.pose.position.x)
+            # Calculate the nearest point in the scan
+            idx = round((yaw - self.scanparams[0]) / self.scanparams[2])
+            # Calculate the position of the nearest point in the scan
+            distance = self.scan[idx]
+            angle = self.scanparams[0] + idx * self.scanparams[2]
+            x = distance * np.cos(angle)
+            y = distance * np.sin(angle)
+            point_p = PoseStamped()
+            point_p.header.frame_id = 'tim551'
+            point_p.pose.position.x = x
+            point_p.pose.position.y = y
+            point_p.pose.position.z = 0
+            point_p.pose.orientation.w = 1
+            self.pubpose.publish(point_p)
+            
 
             
         self.is_processing = False
@@ -99,6 +119,10 @@ class Visual:
 
     def goal_callback(self, msg):
         self.goal = msg.data
+
+    def scan_callback(self, msg):
+        self.scan = msg.ranges
+        self.scanparams = [msg.angle_min, msg.angle_max, msg.angle_increment]
 
 
 
