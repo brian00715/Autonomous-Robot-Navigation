@@ -10,7 +10,7 @@ from sensor_msgs.msg import Image, CameraInfo, LaserScan
 import easyocr
 from geometry_msgs.msg import PoseStamped
 from nav_msgs.msg import OccupancyGrid
-from std_msgs.msg import String, Bool
+from std_msgs.msg import String
 from cv_bridge import CvBridge
 import cv2
 import numpy as np
@@ -24,9 +24,11 @@ class Visual:
         rospy.init_node('visual')
         self.is_processing = False
         self.redcheck = False
+        self.goal = '3'
+        self.redcheck = 'number'
         self.bridge = CvBridge()
         self.pubpose = rospy.Publisher('/percep/pose', PoseStamped, queue_size=10)
-        self.percepnums = '0'*10
+        self.percepnums = [0]*10
         self.pubid = rospy.Publisher('/percep/numbers', String, queue_size=10)
         self.camera_info = rospy.wait_for_message('/front/camera_info', CameraInfo)
         self.intrinsic = np.array(self.camera_info.K).reshape(3, 3)
@@ -89,6 +91,7 @@ class Visual:
                 cur_p.pose.orientation.w = 1
 
                 # Transform the direction to other frame
+                self.listener.lookupTransform('tim551', self.frame, rospy.Time(0))
                 transformed = self.listener.transformPose('tim551', cur_p)
 
                 
@@ -109,6 +112,16 @@ class Visual:
                 point_p.pose.position.z = 0
                 point_p.pose.orientation.w = 1
 
+                try:
+                    (trans,rot) = self.listener.lookupTransform('/map', '/tim551', rospy.Time(0))
+                except Exception as e:
+                    #print(e)
+                    self.is_processing = False
+                    return
+                #print(trans," ",rot)
+                transformed_p = self.listener.transformPose('map', point_p)   
+                x = transformed_p.pose.position.x
+                y = transformed_p.pose.position.y           
                 # Save the position of the number
                 numberpose = np.array([x, y])
                 idx = int(detection[1])
@@ -118,17 +131,19 @@ class Visual:
 
                 # Pulish the direction and the id of the object
                 #self.pubpose.publish(transformed)
-                self.pubid.publish(self.percepnums)
-                if self.percepnums[int(self.goal)] == '1':
+                #self.pubid.publish(self.percepnums)
+                if self.percepnums[int(self.goal)] == 1:
                     goal_x = self.numberposelists[int(self.goal), 0]
                     goal_y = self.numberposelists[int(self.goal), 1]
                     goal_p = PoseStamped()
-                    goal_p.header.frame_id = 'tim551'
+                    goal_p.header.frame_id = 'map'
                     goal_p.pose.position.x = goal_x
                     goal_p.pose.position.y = goal_y
                     goal_p.pose.position.z = 0
                     goal_p.pose.orientation.w = 1
                     self.pubpose.publish(goal_p)
+                    # transformed_goal = self.listener.transformPose('map', goal_p)
+                    # self.pubpose.publish(transformed_goal)
 
                 #self.pubpose.publish(point_p)
             
