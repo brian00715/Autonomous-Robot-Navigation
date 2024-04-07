@@ -11,7 +11,7 @@ transform_tolerance: 0.5
 meter_scoring: true
 
 footprint: [[-0.21, -0.165], [-0.21, 0.165], [0.21, 0.165], [0.21, -0.165]]
-footprint_padding: 0.1
+footprint_padding: 0.05
 
 plugins:
   - { name: obstacles_layer, type: "costmap_2d::ObstacleLayer" }
