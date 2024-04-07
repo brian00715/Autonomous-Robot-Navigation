@@ -10,7 +10,7 @@ from sensor_msgs.msg import Image, CameraInfo, LaserScan
 import easyocr
 from geometry_msgs.msg import PoseStamped
 from nav_msgs.msg import OccupancyGrid
-from std_msgs.msg import String, Bool
+from std_msgs.msg import String
 from cv_bridge import CvBridge
 import cv2
 import numpy as np
@@ -24,9 +24,11 @@ class Visual:
         rospy.init_node('visual')
         self.is_processing = False
         self.redcheck = False
+        self.goal = '3'
+        self.redcheck = 'number'
         self.bridge = CvBridge()
         self.pubpose = rospy.Publisher('/percep/pose', PoseStamped, queue_size=10)
-        self.percepnums = '0'*10
+        self.percepnums = [0]*10
         self.pubid = rospy.Publisher('/percep/numbers', String, queue_size=10)
         self.camera_info = rospy.wait_for_message('/front/camera_info', CameraInfo)
         self.intrinsic = np.array(self.camera_info.K).reshape(3, 3)
@@ -38,9 +40,9 @@ class Visual:
         self.scansub = rospy.Subscriber('/front/scan', LaserScan, self.scan_callback)
         self.numberposelists = np.zeros((10, 2))
         # self.mapsub = rospy.Subscriber('/map', OccupancyGrid, self.map_callback)
-        self.goalsub = rospy.Subscriber('/goal', String, self.goal_callback)
+        self.goalsub = rospy.Subscriber('/rviz_panel/goal_name', String, self.goal_callback)
+        self.redcmdsub = rospy.Subscriber('/percep/cmd', String, self.redcmd_callback)
         self.sub = rospy.Subscriber('/front/image_raw', Image, self.callback)
-        self.redcmdsub = rospy.Subscriber('/redcmd', Bool, self.redcmd_callback)
         self.redpub = rospy.Publisher('/percep/red', String, queue_size=10)
         rospy.spin()
 
@@ -48,8 +50,11 @@ class Visual:
         if self.is_processing:
             return
         self.is_processing = True
+        if self.redcheck == 'idle':
+            self.is_processing = False
+            return
         cv_image = self.bridge.imgmsg_to_cv2(msg, 'bgr8')
-        if self.redcheck:
+        if self.redcheck == 'red':
             hsv_image = cv2.cvtColor(cv_image, cv2.COLOR_BGR2HSV)
             lower_red = np.array([0, 100, 100])
             upper_red = np.array([10, 255, 255])
@@ -58,7 +63,7 @@ class Visual:
                 self.redpub.publish('true')
             else:
                 self.redpub.publish('false')
-        else :
+        elif self.redcheck == 'number':
             gray = cv2.cvtColor(cv_image, cv2.COLOR_BGR2GRAY)
             result = self.reader.readtext(gray)
             for detection in result:
@@ -86,6 +91,7 @@ class Visual:
                 cur_p.pose.orientation.w = 1
 
                 # Transform the direction to other frame
+                self.listener.lookupTransform('tim551', self.frame, rospy.Time(0))
                 transformed = self.listener.transformPose('tim551', cur_p)
 
                 
@@ -106,6 +112,16 @@ class Visual:
                 point_p.pose.position.z = 0
                 point_p.pose.orientation.w = 1
 
+                try:
+                    (trans,rot) = self.listener.lookupTransform('/map', '/tim551', rospy.Time(0))
+                except Exception as e:
+                    #print(e)
+                    self.is_processing = False
+                    return
+                #print(trans," ",rot)
+                transformed_p = self.listener.transformPose('map', point_p)   
+                x = transformed_p.pose.position.x
+                y = transformed_p.pose.position.y           
                 # Save the position of the number
                 numberpose = np.array([x, y])
                 idx = int(detection[1])
@@ -115,8 +131,21 @@ class Visual:
 
                 # Pulish the direction and the id of the object
                 #self.pubpose.publish(transformed)
-                self.pubid.publish(self.percepnums)
-                self.pubpose.publish(point_p)
+                #self.pubid.publish(self.percepnums)
+                if self.percepnums[int(self.goal)] == 1:
+                    goal_x = self.numberposelists[int(self.goal), 0]
+                    goal_y = self.numberposelists[int(self.goal), 1]
+                    goal_p = PoseStamped()
+                    goal_p.header.frame_id = 'map'
+                    goal_p.pose.position.x = goal_x
+                    goal_p.pose.position.y = goal_y
+                    goal_p.pose.position.z = 0
+                    goal_p.pose.orientation.w = 1
+                    self.pubpose.publish(goal_p)
+                    # transformed_goal = self.listener.transformPose('map', goal_p)
+                    # self.pubpose.publish(transformed_goal)
+
+                #self.pubpose.publish(point_p)
             
 
             
@@ -139,7 +168,8 @@ class Visual:
         self.map = np.array(data).reshape(msg.info.height, msg.info.width)
 
     def goal_callback(self, msg):
-        self.goal = msg.data
+        if msg.data[: 4] == '/box':
+            self.goal = msg.data[-1]
 
     def scan_callback(self, msg):
         self.scan = msg.ranges
