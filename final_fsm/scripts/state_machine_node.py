@@ -14,10 +14,10 @@ init_flag = True
 init_arg = None
 
 # determine whether the robot have reached the goal
-def is_goal_reached(goal_pose_stamped, robot_pose_stamped):
+def is_goal_reached(goal_pose_stamped, robot_pose_stamped, margin=0.1):
     if robot_pose_stamped is None or goal_pose_stamped is None:
         return False
-    if abs(goal_pose_stamped.pose.position.x - robot_pose_stamped.pose.position.x) < 0.1 and abs(goal_pose_stamped.pose.position.y - robot_pose_stamped.pose.position.y) < 0.1:
+    if abs(goal_pose_stamped.pose.position.x - robot_pose_stamped.pose.position.x) < margin and abs(goal_pose_stamped.pose.position.y - robot_pose_stamped.pose.position.y) < margin:
         return True
     return False
 
@@ -37,6 +37,9 @@ class Task1Tracking(State):
         self.goal_pose = None
 
     def init(self, goal_pose):
+        if goal_pose is None:
+            # self.robot.set_state(self.robot.idle_state)
+            return
         self.robot.pub_goal.publish(goal_pose)
         self.goal_pose = goal_pose
 
@@ -71,11 +74,8 @@ class Task1ToTask2(State):
                 self.robot.pub_goal.publish(self.goal_pose)
             elif self.curr_phase == 2:
                 # self.curr_phase = 3
-                self.robot.pub_percept_red.publish(True)
+                self.robot.pub_percep_cmd.publish("red")
                 self.robot.percept_wait = "red"
-
-            if self.robot.percept_wait == "red":
-                self.robot.pub_percept_red.publish(True)
         pass
         
 class Task2Entry(State):
@@ -98,14 +98,35 @@ class Task2State(State):
     def __init__(self, robot):
         super().__init__(robot)
         self.process = None
+        self.curr_phase = 0
 
     def init(self, arg):
         pub_explore.publish(True)
+        self.robot.pub_percep_cmd.publish("number")
+        self.robot.percept_wait = "number"
+        self.robot.number_pose = None
 
 
     def execute(self):
-        pass
+        if self.curr_phase == 0:
+            if self.robot.number_pose is not None:
+                # self.robot.pub_percep_cmd.publish("idle")
+                # self.robot.percept_wait = ""
+                if is_goal_reached(self.robot.number_pose, self.robot.robot_pose, 0.3):
+                    rospy.loginfo("Goal Reached")
+                    self.curr_phase = 1
+                    self.robot.pub_percep_cmd.publish("idle")
+                    self.robot.percept_wait = ""
+                    self.robot.pub_goal.publish(self.robot.robot_pose)
+
+                self.robot.pub_goal.publish(self.robot.number_pose)
+                self.robot.number_pose = None
+            
+        elif self.curr_phase == 1:
+            pass
+
     def terminate(self):
+        self.robot.percept_wait = ""
         pub_explore.publish(False)
 
 class Task3Tracking(State):
@@ -136,8 +157,10 @@ class Robot:
 
         # Publisher and subscriber for perception
         self.percept_wait = ""
-        self.pub_percept_red = rospy.Publisher("/redcmd", Bool, queue_size=1)
+        self.pub_percep_cmd = rospy.Publisher("/percep/cmd", String, queue_size=1)
         self.sub_percept_red = rospy.Subscriber("/percep/red", String, self.percep_red_callback)
+        self.sub_percpet_number_pose = rospy.Subscriber("/percep/pose", PoseStamped, self.percep_number_pose_callback)
+        self.number_pose = None
         
         # Initialization
         self.robot_frame = "base_link"
@@ -205,7 +228,6 @@ class Robot:
         self.pose_map_goal = goal_pose
 
     def percep_red_callback(self, data):
-        rospy.loginfo("Perception: %s", data.data)
         if self.percept_wait != "red":
             return
         
@@ -215,6 +237,14 @@ class Robot:
         elif data.data == "false":
             self.set_state(self.task2_entry_state, False)
             self.percept_wait = ""
+
+    def percep_number_pose_callback(self, pose):
+        if self.percept_wait != "number":
+            return
+
+        # Get the number pose in map frame
+        self.number_pose = pose
+        self.percept_wait = ""
 
     def get_goal_pose_from_config_map(self, name):
         P_world_goal = self.get_goal_pose_from_config(name)
@@ -285,4 +315,12 @@ if __name__ == '__main__':
         
             
         robot.execute_state()
+
+        if robot.percept_wait == "red":
+            robot.pub_percep_cmd.publish(robot.percept_wait)
+        elif robot.percept_wait == "number":
+            robot.pub_percep_cmd.publish(robot.percept_wait)
+        else:
+            robot.pub_percep_cmd.publish("idle")
+
         rate.sleep()
