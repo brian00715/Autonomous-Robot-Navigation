@@ -9,6 +9,7 @@ import tf2_ros
 import tf2_geometry_msgs
 import tf_conversions
 from states import IdleState, Task1Tracking, Task1ToTask2, Task2Entry, Task2State, Task3Tracking
+from final_pnc.msg import ReachGoal
 
 init_flag = True
 init_arg = None
@@ -33,10 +34,10 @@ class Robot:
         self.tf2_buffer = tf2_ros.Buffer()
         self.tf2_listener = tf2_ros.TransformListener(self.tf2_buffer)
         self.pub_goal = rospy.Publisher("/move_base_simple/goal", PoseStamped, queue_size=1)
-        self.sub_goal_reached = rospy.Subscriber("/goal_reached", Bool, self.goal_reached_callback)
+        self.sub_goal_reached = rospy.Subscriber("/final_pnc/reach_goal", ReachGoal, self.goal_reached_callback)
         # self.pub_goal_name = rospy.Publisher("/rviz_panel/goal_name", String, queue_size=1)
 
-        self.pub_vel = rospy.Publisher("/cmd_vel", Twist, queue_size=1)
+        self.pub_vel = rospy.Publisher("/final_pnc/set_ref_vel", Twist, queue_size=1)
         self.sub_robot_odom = rospy.Subscriber("/gazebo/ground_truth/state", PoseStamped, self.robot_odom_callback)
         self.sub_goal_name = rospy.Subscriber("/rviz_panel/goal_name", String, self.goal_name_callback)
         self.sub_goal_pose = rospy.Subscriber("/move_base_simple/goal", PoseStamped, self.goal_pose_callback)
@@ -178,7 +179,7 @@ class Robot:
         return P_world_goal
 
     def goal_reached_callback(self, data):
-        self.goal_reached = data.data
+        self.goal_reached = data.result.data
 
 
 if __name__ == '__main__':
@@ -206,5 +207,10 @@ if __name__ == '__main__':
             robot.pub_percep_cmd.publish(robot.percept_wait)
         else:
             robot.pub_percep_cmd.publish("idle")
+
+        # publish the speed command
+        cmd_vel = Twist()
+        cmd_vel.linear.x = 0.5
+        robot.pub_vel.publish(cmd_vel)
 
         rate.sleep()

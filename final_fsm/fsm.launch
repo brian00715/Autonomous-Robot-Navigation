@@ -11,7 +11,10 @@
 
 
   <!-- Launch Navigation -->
-  <include file="$(find final_nav)/launch/navigation.launch" />
+  <include file="$(find final_pnc)/launch/navigation.launch" />
+
+  <!-- Launch Localization -->
+  <include file="$(find final_slam)/launch/localization_carto.launch" />
 
   <!-- Launch Perception -->
   <include file="$(find final_percep)/launch/final_percep.launch" />

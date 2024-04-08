@@ -49,8 +49,9 @@ class Task1ToTask2(State):
         self.curr_phase = 0
 
     def init(self, args):
-        self.curr_phase = 0
-        self.goal_pose = self.robot.get_goal_pose_from_config_map("/task1_complete_1")
+        # Start form phase 2
+        self.curr_phase = 2
+        self.goal_pose = self.robot.get_goal_pose_from_config_map("/task1_crossing_1")
         self.robot.pub_goal.publish(self.goal_pose)
         self.robot.goal_reached = False
         # self.robot.pub_goal_name.publish(String(data="/task1_complete_1"))
