@@ -6,10 +6,12 @@ Panels:
       Expanded:
         - /Global Options1
         - /Status1
+        - /Localization1/Odometry1
         - /TF1/Frames1
-        - /mpc1/PoseArray1
+        - /mpc1/Path1
+        - /Path1
       Splitter Ratio: 0.6628242135047913
-    Tree Height: 354
+    Tree Height: 633
   - Class: rviz/Selection
     Name: Selection
   - Class: rviz/Tool Properties
@@ -99,18 +101,18 @@ Visualization Manager:
             y_scale: 1
             z_scale: 1
           Class: rviz_imu_plugin/Imu
-          Enabled: true
+          Enabled: false
           Name: Imu
           Queue Size: 10
           Topic: /imu/data
           Unreliable: false
-          Value: true
+          Value: false
           fixed_frame_orientation: true
         - Alpha: 1
           Autocompute Intensity Bounds: true
           Autocompute Value Bounds:
-            Max Value: 6.1418609619140625
-            Min Value: -1.027380108833313
+            Max Value: 10.361817359924316
+            Min Value: -0.5597621202468872
             Value: true
           Axis: X
           Channel Name: intensity
@@ -179,7 +181,10 @@ Visualization Manager:
             Grid: true
             InteractiveMarkers: true
             Localization:
-              "": true
+              AMCL PoseArray: true
+              AMCL PoseWithCovariance: true
+              Map: true
+              Odometry: true
               Value: true
             Path: true
             Planning:
@@ -273,6 +278,41 @@ Visualization Manager:
           Topic: /amcl_pose
           Unreliable: false
           Value: false
+        - Angle Tolerance: 0.10000000149011612
+          Class: rviz/Odometry
+          Covariance:
+            Orientation:
+              Alpha: 0.5
+              Color: 255; 255; 127
+              Color Style: Unique
+              Frame: Local
+              Offset: 1
+              Scale: 1
+              Value: true
+            Position:
+              Alpha: 0.30000001192092896
+              Color: 204; 51; 204
+              Scale: 1
+              Value: true
+            Value: true
+          Enabled: true
+          Keep: 1
+          Name: Odometry
+          Position Tolerance: 0.10000000149011612
+          Queue Size: 10
+          Shape:
+            Alpha: 1
+            Axes Length: 0.5
+            Axes Radius: 0.07999999821186066
+            Color: 255; 25; 0
+            Head Length: 0.30000001192092896
+            Head Radius: 0.10000000149011612
+            Shaft Length: 1
+            Shaft Radius: 0.05000000074505806
+            Value: Axes
+          Topic: /final_slam/odom
+          Unreliable: false
+          Value: true
       Enabled: true
       Name: Localization
     - Class: rviz/Group
@@ -307,12 +347,12 @@ Visualization Manager:
           Class: rviz/Path
           Color: 25; 255; 0
           Enabled: true
-          Head Diameter: 0.30000001192092896
-          Head Length: 0.20000000298023224
+          Head Diameter: 0.029999999329447746
+          Head Length: 0.019999999552965164
           Length: 0.30000001192092896
           Line Style: Billboards
           Line Width: 0.029999999329447746
-          Name: Full Path
+          Name: Global Path
           Offset:
             X: 0
             Y: 0
@@ -321,8 +361,8 @@ Visualization Manager:
           Pose Style: None
           Queue Size: 10
           Radius: 0.029999999329447746
-          Shaft Diameter: 0.10000000149011612
-          Shaft Length: 0.10000000149011612
+          Shaft Diameter: 0.009999999776482582
+          Shaft Length: 0.05000000074505806
           Topic: /move_base/NavfnROS/plan
           Unreliable: false
           Value: true
@@ -606,7 +646,7 @@ Visualization Manager:
           Radius: 0.029999999329447746
           Shaft Diameter: 0.10000000149011612
           Shaft Length: 0.10000000149011612
-          Topic: /final_pnc/mpc/local_path
+          Topic: /final_pnc/mpc/actual_ref_path
           Unreliable: false
           Value: true
         - Alpha: 1
@@ -680,7 +720,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/ThirdPersonFollower
-      Distance: 20.95750617980957
+      Distance: 21.362380981445312
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -688,9 +728,9 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 8.67646598815918
-        Y: -2.2607786655426025
-        Z: -1.9073486328125e-06
+        X: 11.55424690246582
+        Y: -0.9628103971481323
+        Z: -2.7418136596679688e-06
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
@@ -698,7 +738,7 @@ Visualization Manager:
       Near Clip Distance: 0.009999999776482582
       Pitch: 1.5697963237762451
       Target Frame: map
-      Yaw: 0.03540483117103577
+      Yaw: 6.278595447540283
     Saved:
       - Class: rviz/ThirdPersonFollower
         Distance: 4
