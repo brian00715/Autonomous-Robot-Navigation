@@ -3,146 +3,28 @@
 import rospy
 import roslaunch
 from std_msgs.msg import String
-from geometry_msgs.msg import PoseStamped, Pose
+from geometry_msgs.msg import PoseStamped, Pose, Twist
 from std_msgs.msg import Bool
 import tf2_ros
 import tf2_geometry_msgs
 import tf_conversions
-import threading, subprocess
+from states import IdleState, Task1Tracking, Task1ToTask2, Task2Entry, Task2State, Task3Tracking
 
 init_flag = True
 init_arg = None
 
 # determine whether the robot have reached the goal
-def is_goal_reached(goal_pose_stamped, robot_pose_stamped, margin=0.1):
-    if robot_pose_stamped is None or goal_pose_stamped is None:
+
+
+def near_turning_points(robot_pose_stamped, turning_points, margin=0.1):
+    if robot_pose_stamped is None or turning_points is None:
         return False
-    if abs(goal_pose_stamped.pose.position.x - robot_pose_stamped.pose.position.x) < margin and abs(goal_pose_stamped.pose.position.y - robot_pose_stamped.pose.position.y) < margin:
-        return True
+    for point in turning_points:
+        if abs(point[0] - robot_pose_stamped.pose.position.x) < margin and abs(point[1] - robot_pose_stamped.pose.position.y) < margin:
+            return True
     return False
 
-class State:
-    def __init__(self, robot):
-        self.robot = robot
-    def init(self, args=None):
-        pass
-    def execute(self):
-        pass
-    def terminate(self):
-        pass
 
-class Task1Tracking(State):
-    def __init__(self, robot):
-        super().__init__(robot)
-        self.goal_pose = None
-
-    def init(self, goal_pose):
-        if goal_pose is None:
-            # self.robot.set_state(self.robot.idle_state)
-            return
-        self.robot.pub_goal.publish(goal_pose)
-        self.goal_pose = goal_pose
-
-    def execute(self):
-        if is_goal_reached(self.goal_pose, self.robot.robot_pose):
-            rospy.loginfo("Goal Reached")
-            self.robot.set_state(self.robot.task1_to_task2_state, None)
-        pass
-
-
-class Task1ToTask2(State):
-    def __init__(self, robot):
-        super().__init__(robot)
-        self.curr_phase = 0
-
-    def init(self, args):
-        self.curr_phase = 0
-        self.goal_pose = robot.get_goal_pose_from_config_map("/task1_complete_1")
-        self.robot.pub_goal.publish(self.goal_pose)
-        # self.robot.pub_goal_name.publish(String(data="/task1_complete_1"))
-
-    def execute(self):
-        if is_goal_reached(self.goal_pose, self.robot.robot_pose):
-            rospy.loginfo("Goal Reached")
-            if self.curr_phase == 0:
-                self.curr_phase = 1
-                self.goal_pose = robot.get_goal_pose_from_config_map("/task1_complete_2")
-                self.robot.pub_goal.publish(self.goal_pose)
-            elif self.curr_phase == 1:
-                self.curr_phase = 2
-                self.goal_pose = robot.get_goal_pose_from_config_map("/task1_crossing_1")
-                self.robot.pub_goal.publish(self.goal_pose)
-            elif self.curr_phase == 2:
-                # self.curr_phase = 3
-                self.robot.pub_percep_cmd.publish("red")
-                self.robot.percept_wait = "red"
-        pass
-        
-class Task2Entry(State):
-    def init(self, args):
-        if args:
-            self.goal_pose = robot.get_goal_pose_from_config_map("/task2_entry_1")
-            self.robot.pub_goal.publish(self.goal_pose)
-        else:
-            self.goal_pose = robot.get_goal_pose_from_config_map("/task2_entry_2")
-            self.robot.pub_goal.publish(self.goal_pose)
-
-    def execute(self):
-        if is_goal_reached(self.goal_pose, self.robot.robot_pose):
-            rospy.loginfo("Goal Reached")
-            self.robot.set_state(self.robot.idle_state)
-        pass
-    
-
-class Task2State(State):
-    def __init__(self, robot):
-        super().__init__(robot)
-        self.process = None
-        self.curr_phase = 0
-
-    def init(self, arg):
-        pub_explore.publish(True)
-        self.robot.pub_percep_cmd.publish("number")
-        self.robot.percept_wait = "number"
-        self.robot.number_pose = None
-        self.curr_phase = 0
-
-
-    def execute(self):
-        if self.curr_phase == 0:
-            if self.robot.number_pose is not None:
-                # self.robot.pub_percep_cmd.publish("idle")
-                # self.robot.percept_wait = ""
-                if is_goal_reached(self.robot.number_pose, self.robot.robot_pose, 0.3):
-                    rospy.loginfo("Goal Reached")
-                    self.curr_phase = 1
-                    self.robot.pub_percep_cmd.publish("idle")
-                    self.robot.percept_wait = ""
-                    self.robot.pub_goal.publish(self.robot.robot_pose)
-
-                self.robot.pub_goal.publish(self.robot.number_pose)
-                self.robot.number_pose = None
-            
-        elif self.curr_phase == 1:
-            pass
-
-    def terminate(self):
-        self.robot.percept_wait = ""
-        pub_explore.publish(False)
-
-class Task3Tracking(State):
-    def init(self, goal_pose):
-        self.robot.pub_goal.publish(goal_pose)
-
-    def execute(self):
-        pass
-
-class IdleState(State):
-    def init(self, args=None):
-        self.robot.pub_goal.publish(self.robot.robot_pose)
-
-    def execute(self):
-        pass
 
 class Robot:
     def __init__(self):
@@ -152,6 +34,7 @@ class Robot:
         self.pub_goal = rospy.Publisher("/move_base_simple/goal", PoseStamped, queue_size=1)
         # self.pub_goal_name = rospy.Publisher("/rviz_panel/goal_name", String, queue_size=1)
 
+        self.pub_vel = rospy.Publisher("/cmd_vel", Twist, queue_size=1)
         self.sub_robot_odom = rospy.Subscriber("/gazebo/ground_truth/state", PoseStamped, self.robot_odom_callback)
         self.sub_goal_name = rospy.Subscriber("/rviz_panel/goal_name", String, self.goal_name_callback)
         self.sub_goal_pose = rospy.Subscriber("/move_base_simple/goal", PoseStamped, self.goal_pose_callback)
@@ -162,6 +45,8 @@ class Robot:
         self.sub_percept_red = rospy.Subscriber("/percep/red", String, self.percep_red_callback)
         self.sub_percpet_number_pose = rospy.Subscriber("/percep/pose", PoseStamped, self.percep_number_pose_callback)
         self.number_pose = None
+
+        self.pub_explore = rospy.Publisher("/start_explore", Bool, queue_size=1)
         
         # Initialization
         self.robot_frame = "base_link"
@@ -303,7 +188,7 @@ if __name__ == '__main__':
     robot = Robot()
     rospy.Subscriber("robot_state", String, state_callback)
     # 订阅tf tree
-    pub_explore = rospy.Publisher("/start_explore", Bool, queue_size=1)
+    
 
     rate = rospy.Rate(10)  # 10hz
     while not rospy.is_shutdown():
