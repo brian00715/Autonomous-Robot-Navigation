@@ -11,7 +11,8 @@
   </group>
 
   <!-- Run the map server -->
-  <arg name="map_file" default="$(find final_slam)/maps/final_map_2d.yaml" />
+  <!-- <arg name="map_file" default="$(find final_slam)/maps/final_map_2d.yaml" /> -->
+  <arg name="map_file" default="$(find final_slam)/maps/carto_map_3d_3.yaml" />
   <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" />
 
   <group if="$(eval localization == 'amcl')">

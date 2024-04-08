@@ -48,7 +48,7 @@ def linear_interpolate_pose(pose1, pose2, t):
     return interpolated_pose
 
 
-def path_linear_interpolation(path: nav_msgs.Path, T, N, V):
+def path_lin_interpo_cut(path: nav_msgs.Path, T, N, V):
     """
     Extracts and interpolates a new path based on time steps and reference speed from a nav_msgs.msg.Path.
 
@@ -105,6 +105,53 @@ def path_linear_interpolation(path: nav_msgs.Path, T, N, V):
             new_path.poses.append(path.poses[0])
 
     return new_path
+
+
+def path_lin_interpo(original_path: nav_msgs.Path, step_dist: float) -> nav_msgs.Path:
+    """
+    Linearly interpolate between points in a path to ensure that the distance between
+    consecutive points is approximately equal to step_dist.
+    """
+    # Create a new Path message to store the interpolated path
+    interpolated_path = nav_msgs.Path()
+    interpolated_path.header = original_path.header
+
+    if not original_path.poses:
+        return interpolated_path  # Return the empty path if the original is empty
+
+    # Add the first pose of the original path to the interpolated path
+    interpolated_path.poses.append(original_path.poses[0])
+
+    for i in range(1, len(original_path.poses)):
+        start_pose = original_path.poses[i - 1]
+        end_pose = original_path.poses[i]
+
+        # Calculate the distance between the current and the next pose
+        distance = euclidian_dist_se2(start_pose.pose, end_pose.pose)
+
+        # Calculate the number of steps needed between the current and next pose
+        steps = int(np.ceil(distance / step_dist))
+
+        for step in range(1, steps):
+            # Calculate the interpolation factor
+            t = step / steps
+
+            # Interpolate positions
+            interpolated_pose = geometry_msgs.PoseStamped()
+            interpolated_pose.header = start_pose.header
+            interpolated_pose.pose.position.x = (1 - t) * start_pose.pose.position.x + t * end_pose.pose.position.x
+            interpolated_pose.pose.position.y = (1 - t) * start_pose.pose.position.y + t * end_pose.pose.position.y
+            interpolated_pose.pose.position.z = (1 - t) * start_pose.pose.position.z + t * end_pose.pose.position.z
+
+            # Optionally, interpolate orientations here as well
+
+            # Add the interpolated pose to the path
+            interpolated_path.poses.append(interpolated_pose)
+
+        # Add the end pose of the current segment to the path
+        interpolated_path.poses.append(end_pose)
+
+    return interpolated_path
 
 
 def ndarray2path(ar: np.ndarray) -> nav_msgs.Path:
@@ -233,6 +280,24 @@ def reorder_path_points(path):
     return reordered_path
 
 
+def find_point_from_idx_dist(path: nav_msgs.Path, idx, dist) -> geometry_msgs.PoseStamped:
+    """find the point that is at specified distance from the origin in the path
+
+    idx: int, the index of the point in the path
+    dist: float, the distance from the idx-th point
+    """
+    if len(path.poses) == 0:
+        return None
+    if dist <= 0:
+        return path.poses[idx]
+    for i in range(idx, len(path.poses)):
+        curr_point_dist = euclidian_dist_se2(path.poses[idx].pose, path.poses[i].pose)
+        if curr_point_dist >= dist:
+            return path.poses[i]
+
+    return path.poses[-1]
+
+
 if __name__ == "__main__":
 
     path = [
@@ -245,6 +310,6 @@ if __name__ == "__main__":
 
     T = 0.5
     N = 10
-    new_path = path_linear_interpolation(path, T, N, 0.5)
+    new_path = path_lin_interpo_cut(path, T, N, 0.5)
     for pose in new_path.poses:
         print(f"({pose.pose.position.x}, {pose.pose.position.y}, {pose.pose.position.z})")
