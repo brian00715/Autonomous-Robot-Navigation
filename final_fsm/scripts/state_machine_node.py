@@ -29,9 +29,11 @@ def near_turning_points(robot_pose_stamped, turning_points, margin=0.1):
 class Robot:
     def __init__(self):
         self.robot_pose = None
+        self.goal_reached = False
         self.tf2_buffer = tf2_ros.Buffer()
         self.tf2_listener = tf2_ros.TransformListener(self.tf2_buffer)
         self.pub_goal = rospy.Publisher("/move_base_simple/goal", PoseStamped, queue_size=1)
+        self.sub_goal_reached = rospy.Subscriber("/goal_reached", Bool, self.goal_reached_callback)
         # self.pub_goal_name = rospy.Publisher("/rviz_panel/goal_name", String, queue_size=1)
 
         self.pub_vel = rospy.Publisher("/cmd_vel", Twist, queue_size=1)
@@ -175,18 +177,14 @@ class Robot:
 
         return P_world_goal
 
-
-def state_callback(data):
-    global robot
-    if data.data == "Complete":
-        robot.set_state(robot.idle_state)
+    def goal_reached_callback(self, data):
+        self.goal_reached = data.data
 
 
 if __name__ == '__main__':
     global robot
     rospy.init_node('robot_state_machine', anonymous=True)
     robot = Robot()
-    rospy.Subscriber("robot_state", String, state_callback)
     # 订阅tf tree
     
 
