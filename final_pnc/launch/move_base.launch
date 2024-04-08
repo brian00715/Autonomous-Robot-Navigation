@@ -26,8 +26,8 @@
     <!-- <rosparam file="$(find final_pnc)/config/nav_params/teb.yaml" command="load" />
     <param name="base_local_planner" value="teb_local_planner/TebLocalPlannerROS" /> -->
 
-    <remap from="cmd_vel" to="dummy_cmd_vel" />
-
+    <remap from="cmd_vel" to="dummy/cmd_vel" />
+    <remap from="/move_base_simple/goal" to="/dummy/goal" />
   </node>
 
   <group if="$(eval local_planner == 'mpc')">

@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-'''
+"""
  # @ Author: Kuankuan Sima
  # @ Email: smkk00715@gmail.com
  # @ Create Time: 2024-04-06 23:19:59
  # @ Modified time: 2024-04-07 14:00:05
  # @ Description:
- '''
+ """
 
 
 import math
@@ -25,12 +25,16 @@ from nmpc_controller import NMPCC
 from std_msgs.msg import Bool
 from utils import (
     euclidian_dist_se2,
-    extract_interpolated_path,
+    get_acute_angle,
     ndarray2pose_se2,
     path2ndarray_se2,
-    quat2yaw,
+    path_linear_interpolation,
     pose2ndarray_se2,
+    quat2yaw,
+    find_nearest_point,
 )
+from nav_msgs.srv import GetPlan
+from final_pnc.msg import ReachGoal
 
 
 class PIDController:
@@ -56,15 +60,15 @@ class NMPCNode:
     def __init__(self, method="mpc", freq=10):
         rospy.init_node("path_tracker_node")
 
-        self.flag = True
         self.method = method
 
-        self.enable_plan = False
+        # Load parameters
         config_path = os.path.join(sys.path[0], "../config/nav_params/mpc.yaml")
         param_dict = yaml.safe_load(open(config_path, "r"))
         self.ref_path_topic = param_dict["ref_path_topic"]
         self.odom_topic = param_dict["odom_topic"]
-        self.arrive_th = param_dict["arrive_th"]
+        self.xy_tol = param_dict["xy_tol"]
+        self.ang_tol = np.deg2rad(param_dict["ang_tol"])
         self.vel_ref = param_dict["vel_ref"]
         self.rot_th = np.deg2rad(param_dict["rot_th"])
         self.freq = param_dict["freq"]
@@ -74,6 +78,7 @@ class NMPCNode:
         if self.method == "mpc":
             self.N = param_dict["N"]
             self.T = param_dict["T"]
+            self.horizon_len = self.T * self.N * self.vel_ref
             prob_params = {
                 "control_dim": 2,
                 "state_dim": 3,
@@ -99,11 +104,16 @@ class NMPCNode:
             self.R = np.diag([0.1, 0.1])
             self.dt = 0.1
 
+        # States variables
+        self.enable_ctrl = False
         self.curr_odom = Odometry()
         self.ref_path = None
-        self.actual_ref_path = None # interpolated path from the original reference path given the MPC parameters
+        self.actual_ref_path = None  # interpolated path from the original reference path given the MPC parameters
         self.curr_pose = None
-        self.goal_pose = PoseStamped()
+        self.goal_pose = None
+        self.global_path = None
+        self.rot2start_yaw = False
+        self.rot2goal_yaw = False
 
         # ROS related
         # pubs
@@ -112,45 +122,35 @@ class NMPCNode:
         self.actual_ref_path_pub = rospy.Publisher("/final_pnc/mpc/actual_ref_path", Path, queue_size=1)
         # subs
         self.odom_sub = rospy.Subscriber(self.odom_topic, Odometry, self.robot_odom_callback)
-        self.ref_path_sub = rospy.Subscriber(self.ref_path_topic, Path, self.ref_path_callback)
+        # self.ref_path_sub = rospy.Subscriber(self.ref_path_topic, Path, self.ref_path_callback)
         self.goal_pose_sub = rospy.Subscriber("/move_base_simple/goal", PoseStamped, self.goal_pose_callback)
-        self.reach_pub = rospy.Publisher("/final_pnc/reach_goal", Bool, queue_size=1)
+        self.reach_pub = rospy.Publisher("/final_pnc/reach_goal", ReachGoal, queue_size=1)
+        self.set_vel_sub = rospy.Subscriber("/final_pnc/set_ref_vel", Twist, self.set_speed_callback)
+        # srvs
+        self.get_plan_srv = rospy.ServiceProxy("/move_base/NavfnROS/make_plan", GetPlan)
         # self.dyn_client = DynServer(path_publisherConfig, self.dyn_callback)
 
+    def set_speed_callback(self, msg: Twist):
+        self.vel_ref = msg.linear.x
+        self.controller.set_param("max_vel", self.vel_ref)
+        rospy.loginfo(f"New reference vel:{self.vel_ref} received!")
+
     def goal_pose_callback(self, msg: PoseStamped):
-        self.enable_plan = True
+        if self.curr_odom is None:
+            return
         self.goal_pose = msg
+        curr_pose = PoseStamped()
+        curr_pose.header = self.curr_odom.header
+        curr_pose.pose = self.curr_odom.pose.pose
+        self.global_path = self.get_plan_srv.call(curr_pose, msg, 0).plan
         rospy.loginfo(f"New goal {(msg.pose.position.x,msg.pose.position.y,quat2yaw(msg.pose.orientation))} received!")
+        self.rot2start_yaw = True
+        self.enable_ctrl = True
 
     def ref_path_callback(self, msg: Path):
         self.ref_path = msg
-        if self.enable_plan:
-            self.actual_ref_path = extract_interpolated_path(msg, self.T, self.N + 1, self.vel_ref)
-
-    def find_nearest_point(self):
-        if self.ref_path is None or self.curr_pose is None:
-            return None
-
-        min_dist = float("inf")
-        selected_idx = None
-        robot_x, robot_y = self.curr_pose[0], self.curr_pose[1]
-        robot_heading = self.curr_pose[2]
-
-        for i, pose in enumerate(self.ref_path.poses):
-            point_x, point_y = pose.pose.position.x, pose.pose.position.y
-            base2point_yaw = math.atan2(point_y - robot_y, point_x - robot_x)
-            dist = math.sqrt((point_x - robot_x) ** 2 + (point_y - robot_y) ** 2)
-
-            # Calculate the absolute angle difference between robot heading and base2point_yaw
-            angle_diff = abs(robot_heading - base2point_yaw)
-            angle_diff = min(angle_diff, 2 * math.pi - angle_diff)  # Normalize angle to be within [0, π]
-
-            # Threshold for angle difference can be adjusted. Here it's set to π/4 radians (45 degrees)
-            if dist < min_dist and angle_diff <= math.pi / 4:
-                min_dist = dist
-                selected_idx = i
-
-        return selected_idx
+        if self.enable_ctrl:
+            self.actual_ref_path = path_linear_interpolation(msg, self.T, self.N + 1, self.vel_ref)
 
     def output_tum_format(self, odom, filename="trajectory.txt"):
         """
@@ -185,17 +185,7 @@ class NMPCNode:
         rospy.loginfo("Reconfigure Request: speed_target={}".format(self.vel_ref))
         return config
 
-    def pos_to_state(self, pos):
-        yaw = quat2yaw(pos.orientation)
-        state = np.array([pos.position.x, pos.position.y, yaw])
-        return state
-
     def robot_odom_callback(self, msg: Odometry):
-        if self.flag:
-            self.flag = False
-            pose = msg.pose.pose
-            self.init_pose = self.pos_to_state(pose)
-            return
         self.world_frame = msg.header.frame_id
         self.robot_frame = msg.child_frame_id
         self.curr_odom = msg
@@ -228,6 +218,7 @@ class NMPCNode:
                 diff = self.actual_ref_path[i][2] - self.curr_pose[2]
                 while diff > math.pi:
                     diff -= 2 * math.pi
+                while diff < -math.pi:
                     diff += 2 * math.pi
                 self.actual_ref_path[i][2] = self.curr_pose[2] + diff
 
@@ -288,31 +279,66 @@ class NMPCNode:
 
         return cmd_vel
 
+    def is_xy_reached(self):
+        return euclidian_dist_se2(ndarray2pose_se2(self.curr_pose), self.goal_pose.pose) < self.xy_tol
+
     def run(self):
         rate = rospy.Rate(self.freq)
+        cmd_vel = Twist()
         while not rospy.is_shutdown():
-            if self.actual_ref_path is not None and self.curr_pose is not None and self.enable_plan:
-                first_point = pose2ndarray_se2(self.actual_ref_path.poses[0].pose)
-                if abs(self.curr_pose[2] - first_point[2]) > math.pi:
-                    if self.curr_pose[2] > first_point[2]:
-                        self.curr_pose[2] -= 2 * math.pi
-                    else:
-                        self.curr_pose[2] += 2 * math.pi
-                if abs(self.curr_pose[2] - first_point[2]) > self.rot_th:
+
+            if self.curr_pose is not None and self.enable_ctrl:
+
+                if self.is_xy_reached():
                     cmd_vel = Twist()
-                    cmd_vel.angular.z = self.yaw_pid.get_output(self.curr_pose[2], first_point[2], 1 / self.freq)
-                if self.method == "mpc":
-                    cmd_vel = self.compute_cmd_vel_mpc()
-                elif self.method == "lqr":
-                    cmd_vel = self.compute_cmd_vel_lqr()
-                if euclidian_dist_se2(ndarray2pose_se2(self.curr_pose), self.goal_pose.pose) < self.arrive_th:
-                    self.enable_plan = False
-                    cmd_vel = Twist()
-                    self.pub_cmd_vel.publish(cmd_vel) # stop immediately
-                    self.reach_pub.publish(Bool(True))
-                    rospy.loginfo("Goal reached!")
-                self.pub_cmd_vel.publish(cmd_vel)
-                self.actual_ref_path_pub.publish(self.actual_ref_path)
+                    self.pub_cmd_vel.publish(cmd_vel)  # stop immediately
+                    self.rot2start_yaw = False
+                    self.rot2goal_yaw = True
+
+                idx = find_nearest_point(self.global_path, self.curr_pose)
+                if idx is None:
+                    rospy.logwarn("can't find nearest point")
+                    continue
+                # rospy.loginfo(f"nearest point index: {idx}, pose:{self.global_path.poses[idx].pose.position}")
+                self.ref_path = Path()
+                self.ref_path.header = self.global_path.header
+                self.ref_path.poses = self.global_path.poses[idx:]
+                self.actual_ref_path = path_linear_interpolation(self.ref_path, self.T, self.N + 1, self.vel_ref)
+
+                if self.rot2start_yaw:
+                    ref_point = pose2ndarray_se2(self.actual_ref_path.poses[2].pose)
+                    ref_yaw = np.arctan2(ref_point[1] - self.curr_pose[1], ref_point[0] - self.curr_pose[0])
+                    ref_yaw = get_acute_angle(self.curr_pose[2], ref_yaw)
+                    # rospy.loginfo(f"Rotating: {self.curr_pose[2]:.2f} -> {ref_yaw:.2f}")
+                    if abs(ref_yaw - self.curr_pose[2]) < self.rot_th:
+                        self.rot2start_yaw = False
+                        continue
+                    cmd_vel.linear.x = 0
+                    cmd_vel.angular.z = self.yaw_pid.get_output(self.curr_pose[2], ref_yaw, 1 / self.freq)
+                elif self.rot2goal_yaw:
+                    ref_yaw = quat2yaw(self.goal_pose.pose.orientation)
+                    ref_yaw = get_acute_angle(self.curr_pose[2], ref_yaw)
+                    # rospy.loginfo(f"Rotating: {self.curr_pose[2]:.2f} -> {ref_yaw:.2f}")
+                    if abs(ref_yaw - self.curr_pose[2]) < self.ang_tol:  # really reached the goal
+                        self.rot2goal_yaw = False
+                        msg = ReachGoal()
+                        msg.result.data = True
+                        msg.goal = self.goal_pose
+                        self.reach_pub.publish(msg)
+                        rospy.loginfo("Goal reached!")
+                        self.enable_ctrl = False
+                        continue
+
+                    cmd_vel.linear.x = 0
+                    cmd_vel.angular.z = self.yaw_pid.get_output(self.curr_pose[2], ref_yaw, 1 / self.freq)
+                else:
+                    if self.method == "mpc":
+                        cmd_vel = self.compute_cmd_vel_mpc()
+                    elif self.method == "lqr":
+                        cmd_vel = self.compute_cmd_vel_lqr()
+                    self.actual_ref_path_pub.publish(self.actual_ref_path)
+
+            self.pub_cmd_vel.publish(cmd_vel)
             rate.sleep()
 
 

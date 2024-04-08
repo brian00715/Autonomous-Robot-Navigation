@@ -18,6 +18,33 @@ me5413_world:
     y: -4.7
     yaw: -1.57
 
+  # assembly area poses
+  task1_complete_1:
+    x: 5.6
+    y: -6
+    yaw: 1.57
+
+  task1_complete_2:
+    x: 5.6
+    y: 0
+    yaw: 1.57
+
+  task1_crossing_1:
+    x: 11.95
+    y: 3.5
+    yaw: 0
+    
+
+  task2_entry_1:
+    x: 13
+    y: 2.5
+    yaw: -1.57
+
+  task2_entry_2:
+    x: 17.27
+    y: 2.73
+    yaw: -1.57
+
   # packing area poses
   # packing_area_1:
   #   x: 13.0

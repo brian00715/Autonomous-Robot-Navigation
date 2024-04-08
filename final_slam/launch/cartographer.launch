@@ -1,5 +1,5 @@
 <launch>
   <!-- Launch Cartographer -->
-  <include file="$(find cartographer_ros)/launch/ME5413_final_mapping_2d.launch" />
+  <include file="$(find cartographer_ros)/launch/ME5413_final_backpack_2d.launch" />
 
 </launch>

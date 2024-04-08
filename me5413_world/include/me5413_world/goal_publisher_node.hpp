@@ -55,7 +55,6 @@ class GoalPublisherNode
   ros::NodeHandle nh_;
   ros::Timer timer_;
 
-  ros::Publisher pub_goal_;
   ros::Publisher pub_absolute_position_error_;
   ros::Publisher pub_absolute_heading_error_;
   ros::Publisher pub_relative_position_error_;

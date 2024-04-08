@@ -13,7 +13,6 @@ namespace me5413_world
 
 GoalPublisherNode::GoalPublisherNode() : tf2_listener_(tf2_buffer_)
 {
-  this->pub_goal_ = nh_.advertise<geometry_msgs::PoseStamped>("/move_base_simple/goal", 1);
   this->pub_absolute_position_error_ = nh_.advertise<std_msgs::Float32>("/me5413_world/absolute/position_error", 1);
   this->pub_absolute_heading_error_ = nh_.advertise<std_msgs::Float32>("/me5413_world/absolute/heading_error", 1);
   this->pub_relative_position_error_ = nh_.advertise<std_msgs::Float32>("/me5413_world/relative/position_error", 1);
@@ -140,10 +139,10 @@ void GoalPublisherNode::goalNameCallback(const std_msgs::String::ConstPtr& name)
   tf2::doTransform(this->pose_world_robot_, this->pose_map_robot_, transform_map_world);
 
   // Publish goal pose in map frame 
-  if (this->goal_type_ != "box")
-  {
-    this->pub_goal_.publish(P_map_goal);
-  }
+  // if (this->goal_type_ != "box")
+  // {
+  //   this->pub_goal_.publish(P_map_goal);
+  // }
 
   return;
 };

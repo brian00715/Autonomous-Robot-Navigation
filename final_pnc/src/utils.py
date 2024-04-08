@@ -36,17 +36,25 @@ def linear_interpolate_pose(pose1, pose2, t):
     interpolated_pose.pose.position.x = (1 - t) * pose1.pose.position.x + t * pose2.pose.position.x
     interpolated_pose.pose.position.y = (1 - t) * pose1.pose.position.y + t * pose2.pose.position.y
     interpolated_pose.pose.position.z = (1 - t) * pose1.pose.position.z + t * pose2.pose.position.z
-    # Orientation is not interpolated in this example for simplicity.
+    quat_interp = tft.quaternion_slerp(
+        [pose1.pose.orientation.x, pose1.pose.orientation.y, pose1.pose.orientation.z, pose1.pose.orientation.w],
+        [pose2.pose.orientation.x, pose2.pose.orientation.y, pose2.pose.orientation.z, pose2.pose.orientation.w],
+        t,
+    )
+    interpolated_pose.pose.orientation.x = quat_interp[0]
+    interpolated_pose.pose.orientation.y = quat_interp[1]
+    interpolated_pose.pose.orientation.z = quat_interp[2]
+    interpolated_pose.pose.orientation.w = quat_interp[3]
     return interpolated_pose
 
 
-def extract_interpolated_path(path: nav_msgs.Path, T, N, V):
+def path_linear_interpolation(path: nav_msgs.Path, T, N, V):
     """
     Extracts and interpolates a new path based on time steps and reference speed from a nav_msgs.msg.Path.
 
     Parameters:
     - path: nav_msgs.msg.Path, the original path.
-    - T: float, the forward recursive time step.
+    - T: float, the forward time step.
     - N: int, the number of points in the new path.
     - V: float, the reference speed.
 
@@ -92,9 +100,10 @@ def extract_interpolated_path(path: nav_msgs.Path, T, N, V):
     if len(new_path.poses) > 0:
         while len(new_path.poses) < N:
             new_path.poses.append(new_path.poses[-1])  # Copy the last point if new path is shorter than expected.
-    else:
+    else:  # path is shorter than the forward time step
         while len(new_path.poses) < N:
             new_path.poses.append(path.poses[0])
+
     return new_path
 
 
@@ -160,6 +169,42 @@ def pose2ndarray_se2(pose: geometry_msgs.Pose) -> np.ndarray:
     return ar
 
 
+def get_acute_angle(ang1, ang2):
+    """get acute angle w.r.t. ang1"""
+    diff = ang2 - ang1
+    while diff > np.pi:
+        diff -= 2 * np.pi
+    while diff < -np.pi:
+        diff += 2 * np.pi
+    return ang1 + diff
+
+
+def find_nearest_point(path, curr_pose):
+    if path is None or curr_pose is None:
+        return None
+
+    min_dist = float("inf")
+    selected_idx = None
+    robot_x, robot_y = curr_pose[0], curr_pose[1]
+    robot_heading = curr_pose[2]
+
+    for i, pose in enumerate(path.poses):
+        point_x, point_y = pose.pose.position.x, pose.pose.position.y
+        base2point_yaw = np.arctan2(point_y - robot_y, point_x - robot_x)
+        dist = np.sqrt((point_x - robot_x) ** 2 + (point_y - robot_y) ** 2)
+
+        # Calculate the absolute angle difference between robot heading and base2point_yaw
+        angle_diff = abs(robot_heading - base2point_yaw)
+        angle_diff = min(angle_diff, 2 * np.pi - angle_diff)  # Normalize angle to be within [0, π]
+
+        # Threshold for angle difference can be adjusted. Here it's set to π/4 radians (45 degrees)
+        if dist < min_dist :#and angle_diff <= np.pi / 4:
+            min_dist = dist
+            selected_idx = i
+
+    return selected_idx
+
+
 if __name__ == "__main__":
 
     path = [
@@ -172,6 +217,6 @@ if __name__ == "__main__":
 
     T = 0.5
     N = 10
-    new_path = extract_interpolated_path(path, T, N, 0.5)
+    new_path = path_linear_interpolation(path, T, N, 0.5)
     for pose in new_path.poses:
         print(f"({pose.pose.position.x}, {pose.pose.position.y}, {pose.pose.position.z})")

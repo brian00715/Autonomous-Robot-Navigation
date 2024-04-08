@@ -8,10 +8,23 @@ find_package(catkin REQUIRED COMPONENTS
 nav_msgs
 geometry_msgs
 roscpp
+message_generation
 )
 find_package(OpenCV REQUIRED)
 find_package(Boost REQUIRED)
 find_package(yaml-cpp REQUIRED)
+
+add_message_files(
+  FILES
+  ReachGoal.msg
+)
+
+
+generate_messages(
+  DEPENDENCIES
+  std_msgs
+  geometry_msgs
+)
 
 catkin_package(
 INCLUDE_DIRS include
@@ -20,6 +33,7 @@ CATKIN_DEPENDS
   nav_msgs
   geometry_msgs
   roscpp
+  message_runtime
 )
 
 
