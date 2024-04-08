@@ -34,7 +34,7 @@ class Robot:
         self.tf2_buffer = tf2_ros.Buffer()
         self.tf2_listener = tf2_ros.TransformListener(self.tf2_buffer)
         self.pub_goal = rospy.Publisher("/move_base_simple/goal", PoseStamped, queue_size=1)
-        self.sub_goal_reached = rospy.Subscriber("/final_pnc/reach_goal", ReachGoal, self.goal_reached_callback)
+        self.sub_goal_reached = rospy.Subscriber("w", ReachGoal, self.goal_reached_callback)
         # self.pub_goal_name = rospy.Publisher("/rviz_panel/goal_name", String, queue_size=1)
 
         self.pub_vel = rospy.Publisher("/final_pnc/set_ref_vel", Twist, queue_size=1)
