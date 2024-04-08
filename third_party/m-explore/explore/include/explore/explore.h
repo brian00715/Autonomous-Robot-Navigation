@@ -52,6 +52,7 @@
 
 // from final_pnc.msg import ReachGoal
 #include <final_pnc/ReachGoal.h>
+#include <std_msgs/Bool.h>
 
 namespace explore
 {
@@ -87,16 +88,19 @@ private:
 
   bool goalOnBlacklist(const geometry_msgs::Point& goal);
 
+
   ros::NodeHandle private_nh_;
   ros::NodeHandle relative_nh_;
   ros::Publisher marker_array_publisher_;
 
   ros::Publisher goal_pub_;
   ros::Subscriber goal_reached_sub_;
+  ros::Subscriber start_explore_sub_;
   geometry_msgs::PoseStamped goal_pose_;
   tf::TransformListener tf_listener_;
 
   void goalReachedCallback(const final_pnc::ReachGoal::ConstPtr& msg);
+  void startExploreCallback(const std_msgs::Bool::ConstPtr& msg);
 
   Costmap2DClient costmap_client_;
   actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction>
@@ -116,6 +120,8 @@ private:
   double potential_scale_, orientation_scale_, gain_scale_;
   ros::Duration progress_timeout_;
   bool visualize_;
+
+  bool start_explore_;
 };
 }
 

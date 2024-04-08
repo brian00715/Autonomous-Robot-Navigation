@@ -86,6 +86,9 @@ Explore::Explore()
       relative_nh_.createTimer(ros::Duration(1. / planner_frequency_),
                                [this](const ros::TimerEvent&) { makePlan(); });
 
+
+  start_explore_ = false;
+  exploring_timer_.stop();
   // Goal position publisher
   this->goal_pub_ = private_nh_.advertise<geometry_msgs::PoseStamped>("/move_base_simple/goal", 1);
   // Reached goal subscriber
@@ -183,6 +186,10 @@ void Explore::visualizeFrontiers(
 
 void Explore::makePlan()
 {
+  if (!start_explore_) {
+    return;
+  }
+
   // find frontiers
   auto pose = costmap_client_.getRobotPose();
   // get frontiers sorted according to cost
@@ -303,6 +310,17 @@ void Explore::goalReachedCallback(const final_pnc::ReachGoal::ConstPtr& msg)
   oneshot_ = relative_nh_.createTimer(
       ros::Duration(0, 0), [this](const ros::TimerEvent&) { makePlan(); },
       true);
+}
+
+void Explore::startExploreCallback(const std_msgs::Bool::ConstPtr& msg)
+{
+  if (msg->data) {
+    start();
+    start_explore_ = true;
+  } else {
+    exploring_timer_.stop();
+    start_explore_ = false;
+  }
 }
 
 void Explore::start()
