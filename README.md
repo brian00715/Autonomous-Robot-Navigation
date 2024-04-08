@@ -46,7 +46,7 @@ roslaunch final_slam mapping_carto.launch
 - navigation(with finate state machine)
 ```shell
 roslaunch me5413_world world.launch
-roslaunch final_pnc navigation.launch
+roslaunch final_fsm fsm.launch
 ```
 
 
