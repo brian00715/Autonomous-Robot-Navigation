@@ -135,6 +135,13 @@ There are two sources of models needed:
   cp -r ~/ME5413_Final_Project/src/me5413_world/models/* ~/.gazebo/models
   ```
 
+Other requirements
+
+  ```bash
+    pip install easyocr
+    pip intsall --upgrade Pillow
+  ```
+
 ## Usage
 
 ### 0. Gazebo World
