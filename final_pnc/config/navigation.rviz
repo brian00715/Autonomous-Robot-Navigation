@@ -9,7 +9,8 @@ Panels:
         - /Localization1/Odometry1
         - /TF1/Frames1
         - /mpc1/Path1
-        - /Path1
+        - /graph_planner1
+        - /sample_planner1
       Splitter Ratio: 0.6628242135047913
     Tree Height: 633
   - Class: rviz/Selection
@@ -111,8 +112,8 @@ Visualization Manager:
         - Alpha: 1
           Autocompute Intensity Bounds: true
           Autocompute Value Bounds:
-            Max Value: 10.361817359924316
-            Min Value: -0.5597621202468872
+            Max Value: 4.476287364959717
+            Min Value: -2.1294190883636475
             Value: true
           Axis: X
           Channel Name: intensity
@@ -175,18 +176,17 @@ Visualization Manager:
           Unreliable: false
           Value: false
           Visibility:
+            "":
+              "": true
+              Value: true
             Evaluation:
               "": true
               Value: true
             Grid: true
             InteractiveMarkers: true
             Localization:
-              AMCL PoseArray: true
-              AMCL PoseWithCovariance: true
-              Map: true
-              Odometry: true
+              "": true
               Value: true
-            Path: true
             Planning:
               "": true
               Value: true
@@ -200,6 +200,9 @@ Visualization Manager:
               Value: true
             TF: true
             Value: true
+            graph_planner:
+              "": true
+              Value: true
             mpc:
               "": true
               Value: true
@@ -668,30 +671,72 @@ Visualization Manager:
           Value: true
       Enabled: true
       Name: mpc
-    - Alpha: 1
-      Buffer Length: 1
-      Class: rviz/Path
-      Color: 25; 255; 0
+    - Class: rviz/Group
+      Displays:
+        - Alpha: 1
+          Buffer Length: 1
+          Class: rviz/Path
+          Color: 25; 255; 0
+          Enabled: true
+          Head Diameter: 0.30000001192092896
+          Head Length: 0.20000000298023224
+          Length: 0.30000001192092896
+          Line Style: Lines
+          Line Width: 0.029999999329447746
+          Name: Path
+          Offset:
+            X: 0
+            Y: 0
+            Z: 0
+          Pose Color: 255; 85; 255
+          Pose Style: None
+          Queue Size: 10
+          Radius: 0.029999999329447746
+          Shaft Diameter: 0.10000000149011612
+          Shaft Length: 0.10000000149011612
+          Topic: /move_base/GraphPlanner/plan
+          Unreliable: false
+          Value: true
+        - Alpha: 0.699999988079071
+          Class: rviz/Map
+          Color Scheme: costmap
+          Draw Behind: false
+          Enabled: true
+          Name: Map
+          Topic: /move_base/GraphPlanner/expand
+          Unreliable: false
+          Use Timestamp: false
+          Value: true
       Enabled: true
-      Head Diameter: 0.30000001192092896
-      Head Length: 0.20000000298023224
-      Length: 0.30000001192092896
-      Line Style: Lines
-      Line Width: 0.029999999329447746
-      Name: Path
-      Offset:
-        X: 0
-        Y: 0
-        Z: 0
-      Pose Color: 255; 85; 255
-      Pose Style: None
-      Queue Size: 10
-      Radius: 0.029999999329447746
-      Shaft Diameter: 0.10000000149011612
-      Shaft Length: 0.10000000149011612
-      Topic: /move_base/GraphPlanner/plan
-      Unreliable: false
-      Value: true
+      Name: graph_planner
+    - Class: rviz/Group
+      Displays:
+        - Alpha: 1
+          Buffer Length: 1
+          Class: rviz/Path
+          Color: 25; 255; 0
+          Enabled: true
+          Head Diameter: 0.30000001192092896
+          Head Length: 0.20000000298023224
+          Length: 0.30000001192092896
+          Line Style: Lines
+          Line Width: 0.029999999329447746
+          Name: Path
+          Offset:
+            X: 0
+            Y: 0
+            Z: 0
+          Pose Color: 255; 85; 255
+          Pose Style: None
+          Queue Size: 10
+          Radius: 0.029999999329447746
+          Shaft Diameter: 0.10000000149011612
+          Shaft Length: 0.10000000149011612
+          Topic: /move_base/SamplePlanner/plan
+          Unreliable: false
+          Value: true
+      Enabled: true
+      Name: sample_planner
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -720,7 +765,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/ThirdPersonFollower
-      Distance: 21.362380981445312
+      Distance: 15.896835327148438
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -728,8 +773,8 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 11.55424690246582
-        Y: -0.9628103971481323
+        X: 4.175731658935547
+        Y: -1.538949728012085
         Z: -2.7418136596679688e-06
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806

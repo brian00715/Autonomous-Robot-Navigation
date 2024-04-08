@@ -21,19 +21,13 @@ import yaml
 from dynamic_reconfigure.server import Server as DynServer
 from geometry_msgs.msg import Pose, PoseArray, PoseStamped, Twist
 from nav_msgs.msg import Odometry, Path
+from nav_msgs.srv import GetPlan
 from nmpc_controller import NMPCC
 from std_msgs.msg import Bool
-from utils import (
-    euclidian_dist_se2,
-    get_acute_angle,
-    ndarray2pose_se2,
-    path2ndarray_se2,
-    path_linear_interpolation,
-    pose2ndarray_se2,
-    quat2yaw,
-    find_nearest_point,
-)
-from nav_msgs.srv import GetPlan
+from utils import (euclidian_dist_se2, find_nearest_point, get_acute_angle,
+                   ndarray2pose_se2, path2ndarray_se2,
+                   path_linear_interpolation, pose2ndarray_se2, quat2yaw,reorder_path_points)
+
 from final_pnc.msg import ReachGoal
 
 
@@ -67,6 +61,7 @@ class NMPCNode:
         param_dict = yaml.safe_load(open(config_path, "r"))
         self.ref_path_topic = param_dict["ref_path_topic"]
         self.odom_topic = param_dict["odom_topic"]
+        self.make_plan_topic = param_dict["make_plan_topic"]
         self.xy_tol = param_dict["xy_tol"]
         self.ang_tol = np.deg2rad(param_dict["ang_tol"])
         self.vel_ref = param_dict["vel_ref"]
@@ -127,7 +122,9 @@ class NMPCNode:
         self.reach_pub = rospy.Publisher("/final_pnc/reach_goal", ReachGoal, queue_size=1)
         self.set_vel_sub = rospy.Subscriber("/final_pnc/set_ref_vel", Twist, self.set_speed_callback)
         # srvs
-        self.get_plan_srv = rospy.ServiceProxy("/move_base/NavfnROS/make_plan", GetPlan)
+        if rospy.wait_for_service(self.make_plan_topic, timeout=5):
+            rospy.loginfo(f"Service {self.make_plan_topic} is available")
+        self.get_plan_srv = rospy.ServiceProxy(self.make_plan_topic, GetPlan)
         # self.dyn_client = DynServer(path_publisherConfig, self.dyn_callback)
 
     def set_speed_callback(self, msg: Twist):
@@ -143,6 +140,11 @@ class NMPCNode:
         curr_pose.header = self.curr_odom.header
         curr_pose.pose = self.curr_odom.pose.pose
         self.global_path = self.get_plan_srv.call(curr_pose, msg, 0).plan
+        # self.global_path = reorder_path_points(self.global_path)
+        if len(self.global_path.poses) == 0:
+            rospy.logerr("Empty global path")
+            self.enable_ctrl = False
+            return
         rospy.loginfo(f"New goal {(msg.pose.position.x,msg.pose.position.y,quat2yaw(msg.pose.orientation))} received!")
         self.rot2start_yaw = True
         self.enable_ctrl = True
@@ -194,7 +196,7 @@ class NMPCNode:
             self.curr_odom.pose.pose.position.y,
             quat2yaw(self.curr_odom.pose.pose.orientation),
         ]
-
+        # rospy.loginfo(f"Current pose: {self.curr_pose}")
         # self.output_tum_format(odom)
 
     def local_path_callback(self, msg: Path):
@@ -211,10 +213,6 @@ class NMPCNode:
 
         if self.curr_pose is not None:
             for i in range(len(self.actual_ref_path)):
-                # if self.local_ref_path[i][2] < -math.pi:
-                #     self.local_ref_path[i][2] += math.pi
-                # if self.local_ref_path[i][2] > math.pi:
-                #     self.local_ref_path[i][2] -= math.pi
                 diff = self.actual_ref_path[i][2] - self.curr_pose[2]
                 while diff > math.pi:
                     diff -= 2 * math.pi
@@ -288,7 +286,7 @@ class NMPCNode:
         while not rospy.is_shutdown():
 
             if self.curr_pose is not None and self.enable_ctrl:
-
+                
                 if self.is_xy_reached():
                     cmd_vel = Twist()
                     self.pub_cmd_vel.publish(cmd_vel)  # stop immediately
@@ -299,12 +297,13 @@ class NMPCNode:
                 if idx is None:
                     rospy.logwarn("can't find nearest point")
                     continue
-                # rospy.loginfo(f"nearest point index: {idx}, pose:{self.global_path.poses[idx].pose.position}")
                 self.ref_path = Path()
                 self.ref_path.header = self.global_path.header
                 self.ref_path.poses = self.global_path.poses[idx:]
                 self.actual_ref_path = path_linear_interpolation(self.ref_path, self.T, self.N + 1, self.vel_ref)
-
+                self.actual_ref_path.header = self.curr_odom.header
+                self.actual_ref_path_pub.publish(self.actual_ref_path)
+                
                 if self.rot2start_yaw:
                     ref_point = pose2ndarray_se2(self.actual_ref_path.poses[2].pose)
                     ref_yaw = np.arctan2(ref_point[1] - self.curr_pose[1], ref_point[0] - self.curr_pose[0])
@@ -336,8 +335,7 @@ class NMPCNode:
                         cmd_vel = self.compute_cmd_vel_mpc()
                     elif self.method == "lqr":
                         cmd_vel = self.compute_cmd_vel_lqr()
-                    self.actual_ref_path_pub.publish(self.actual_ref_path)
-
+                
             self.pub_cmd_vel.publish(cmd_vel)
             rate.sleep()
 

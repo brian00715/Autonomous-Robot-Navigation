@@ -198,11 +198,39 @@ def find_nearest_point(path, curr_pose):
         angle_diff = min(angle_diff, 2 * np.pi - angle_diff)  # Normalize angle to be within [0, π]
 
         # Threshold for angle difference can be adjusted. Here it's set to π/4 radians (45 degrees)
-        if dist < min_dist :#and angle_diff <= np.pi / 4:
+        if dist < min_dist:  # and angle_diff <= np.pi / 4:
             min_dist = dist
             selected_idx = i
 
     return selected_idx
+
+
+def reorder_path_points(path):
+    if len(path.poses) <= 1:
+        return path
+
+    # 获取路径中的第一个点作为参考点
+    start_pose = path.poses[0]
+    start_position = start_pose.pose.position
+
+    # 计算每个点与参考点之间的距离
+    distances = []
+    for pose in path.poses[1:]:
+        position = pose.pose.position
+        dx = position.x - start_position.x
+        dy = position.y - start_position.y
+        distance = np.sqrt(dx**2 + dy**2)
+        distances.append((pose, distance))
+
+    # 根据距离对点进行排序
+    sorted_poses = sorted(distances, key=lambda x: x[1])
+
+    # 创建一个新的Path对象,并将排序后的点添加到其中
+    reordered_path = nav_msgs.Path()
+    reordered_path.header = path.header
+    reordered_path.poses = [start_pose] + [pose for pose, _ in sorted_poses]
+
+    return reordered_path
 
 
 if __name__ == "__main__":

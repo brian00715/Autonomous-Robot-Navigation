@@ -1,8 +1,11 @@
 odom_topic: "/final_slam/odom"
+# odom_topic: "/gazebo/ground_truth/state"
 ref_path_topic: "/move_base/TrajectoryPlannerROS/global_plan"
+# make_plan_topic: "/move_base/NavfnROS/make_plan"
+make_plan_topic: "/move_base/make_plan"
 
 freq: 10 # control frequency
-rot_th: 25 # degree. rotate in place if the yaw error is less than
+rot_th: 45 # degree. rotate in place if the yaw error is less than
 xy_tol: 0.5 # (m) circular region around the goal
 ang_tol: 10 # (degree) angle tolerance
 
