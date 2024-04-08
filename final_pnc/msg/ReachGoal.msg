@@ -1,0 +1,2 @@
+std_msgs/Bool result
+geometry_msgs/PoseStamped goal

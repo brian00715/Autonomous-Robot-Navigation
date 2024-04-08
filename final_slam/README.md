@@ -8,8 +8,8 @@ Please open a terminal in your workspace and execute the following commands to i
 
     ```shell
     sudo apt-get update
-    sudo apt-get install -y  python3-rosdep stow
-    # sudo apt-get install -y python3-wstool python3-rosdep ninja-build stow
+    # sudo apt-get install -y  python3-rosdep stow
+    sudo apt-get install -y python3-wstool python3-rosdep ninja-build stow
     ```
 
 ### Install Cartographer Dependencies
@@ -27,7 +27,7 @@ Cartographer requires the abseil-cpp library, which needs to be manually install
 Run the `install_abseil.sh` script:
 
     ```
-    src/final_slam/cartographer/cartographer/scripts/install_abseil.sh
+    src/ME5413_Final_Project/final_slam/cartographer/cartographer/scripts/install_abseil.sh
     ```
 
 ### Build and Install
