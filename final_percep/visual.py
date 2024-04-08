@@ -136,6 +136,7 @@ class Visual:
                 #self.pubpose.publish(transformed)
                 #self.pubid.publish(self.percepnums)
                 if self.percepnums[int(self.goal)] == 1:
+                    self.pubid.publish(String(data=str('number found')))
                     goal_x = self.numberposelists[int(self.goal), 0]
                     goal_y = self.numberposelists[int(self.goal), 1]
                     goal_p = PoseStamped()
