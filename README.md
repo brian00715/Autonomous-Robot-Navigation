@@ -33,6 +33,8 @@ sudo apt install ros-noetic-dwa-local-planner
 Python dependencies
 ```shell
 pip install markupsafe==1.1.1
+pip install easyocr
+pip install --upgrade Pillow
 ```
 
 # Running

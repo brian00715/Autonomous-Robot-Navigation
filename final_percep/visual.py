@@ -69,7 +69,7 @@ class Visual:
             for detection in result:
                 if len(detection[1]) > 1:
                     continue
-                if detection[2] < 0.97:
+                if detection[2] < 0.985:
                     continue
                 if detection[1] < '1' or detection[1] > '9':
                     continue
@@ -101,7 +101,7 @@ class Visual:
                 # Calculate the nearest point in the scan
                 idx = round((yaw - self.scanparams[0]) / self.scanparams[2])
                 # Calculate the position of the nearest point in the scan
-                distance = self.scan[idx]
+                distance = self.scan[idx] - 0.5
                 angle = self.scanparams[0] + idx * self.scanparams[2]
                 x = distance * np.cos(angle)
                 y = distance * np.sin(angle)
@@ -121,7 +121,10 @@ class Visual:
                 #print(trans," ",rot)
                 transformed_p = self.listener.transformPose('map', point_p)   
                 x = transformed_p.pose.position.x
-                y = transformed_p.pose.position.y           
+                y = transformed_p.pose.position.y
+                # Check if the point is valid
+                if x == np.inf or x == -np.inf or x == np.nan or y == np.inf or y == -np.inf or y == np.nan:
+                    continue  
                 # Save the position of the number
                 numberpose = np.array([x, y])
                 idx = int(detection[1])
@@ -133,6 +136,7 @@ class Visual:
                 #self.pubpose.publish(transformed)
                 #self.pubid.publish(self.percepnums)
                 if self.percepnums[int(self.goal)] == 1:
+                    self.pubid.publish(String(data=str('number found')))
                     goal_x = self.numberposelists[int(self.goal), 0]
                     goal_y = self.numberposelists[int(self.goal), 1]
                     goal_p = PoseStamped()
@@ -142,6 +146,8 @@ class Visual:
                     goal_p.pose.position.z = 0
                     goal_p.pose.orientation.w = 1
                     self.pubpose.publish(goal_p)
+                    print(self.numberposelists)
+                    print(goal_x, goal_y)
                     # transformed_goal = self.listener.transformPose('map', goal_p)
                     # self.pubpose.publish(transformed_goal)
 
@@ -170,6 +176,7 @@ class Visual:
     def goal_callback(self, msg):
         if msg.data[: 4] == '/box':
             self.goal = msg.data[-1]
+            print(self.goal)
 
     def scan_callback(self, msg):
         self.scan = msg.ranges
