@@ -105,6 +105,7 @@ class Task2State(State):
         self.robot.pub_percep_cmd.publish("number")
         self.robot.percept_wait = "number"
         self.robot.number_pose = None
+        self.curr_phase = 0
 
 
     def execute(self):
