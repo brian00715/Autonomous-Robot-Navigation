@@ -100,8 +100,8 @@ void laserCallback ( const sensor_msgs::LaserScanConstPtr& scan )
     try
     {
         tf::TransformListener listener;
-        listener.waitForTransform ( "world", "tim551", ros::Time ( 0 ), ros::Duration ( 3.0 ) );
-        listener.lookupTransform ( "world", "tim551", ros::Time ( 0 ), g_transform );
+        listener.waitForTransform ( "map", "tim551", ros::Time ( 0 ), ros::Duration ( 3.0 ) );
+        listener.lookupTransform ( "map", "tim551", ros::Time ( 0 ), g_transform );
     }
     catch ( tf::TransformException& ex )
     {
@@ -115,7 +115,7 @@ void laserCallback ( const sensor_msgs::LaserScanConstPtr& scan )
 
 
     /* 更新地图 */
-    g_gmapper->updateMap ( scan, g_lidar_pose );
+    g_gmapper->updateMap ( scan, g_robot_pose );
     
     /* 用opencv图像显示地图 */
     cv::Mat map = g_map->toCvMat();

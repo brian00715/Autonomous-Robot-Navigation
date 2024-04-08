@@ -17,7 +17,7 @@ robot_laser:
 
 sensor_model:
   P_occ: 0.6
-  P_free: 0.4
+  P_free: 0.48
   P_prior: 0.5
   
 robot:

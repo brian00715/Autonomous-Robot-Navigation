@@ -1,8 +1,8 @@
 <launch>
 
-  <node pkg="occ_grid_mapping" type="odometry" name="odometry" output="screen" clear_params="true">
+  <!-- <node pkg="occ_grid_mapping" type="odometry" name="odometry" output="screen" clear_params="true">
 						<rosparam file="$(find occ_grid_mapping)/config/default.yaml" command="load" />
-  </node>
+  </node> -->
 
   <node pkg="occ_grid_mapping" type="mapping" name="mapping" output="screen" clear_params="true">
 						<rosparam file="$(find occ_grid_mapping)/config/default.yaml" command="load" />
