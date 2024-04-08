@@ -28,7 +28,7 @@ generate_messages(
 
 catkin_package(
 INCLUDE_DIRS include
-LIBRARIES rrt_planner
+# LIBRARIES rrt_planner
 CATKIN_DEPENDS
   nav_msgs
   geometry_msgs
