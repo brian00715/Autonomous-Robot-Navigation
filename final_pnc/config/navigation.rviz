@@ -111,8 +111,8 @@ Visualization Manager:
         - Alpha: 1
           Autocompute Intensity Bounds: true
           Autocompute Value Bounds:
-            Max Value: 6.174309730529785
-            Min Value: -1.0270582437515259
+            Max Value: 6.139547348022461
+            Min Value: -1.055454969406128
             Value: true
           Axis: X
           Channel Name: intensity
@@ -175,7 +175,6 @@ Visualization Manager:
           Unreliable: false
           Value: false
           Visibility:
-            "": true
             Evaluation:
               "": true
               Value: true
@@ -190,7 +189,12 @@ Visualization Manager:
             Map: true
             Path: true
             Planning:
-              "": true
+              Foot Print: true
+              Global CostMap: true
+              Global Path: true
+              Goal Pose: true
+              Local CostMap: true
+              Local Path: true
               Value: true
             PointCloud2: true
             RobotModel: true
@@ -575,10 +579,10 @@ Visualization Manager:
           Marker Topic: /gazebo/ground_truth/box_markers
           Name: BoxMarkerArray
           Namespaces:
-            {}
+            gazebo: true
           Queue Size: 100
           Value: true
-      Enabled: false
+      Enabled: true
       Name: Evaluation
     - Alpha: 1
       Autocompute Intensity Bounds: true
@@ -701,16 +705,6 @@ Visualization Manager:
       Enabled: true
       Name: Map
       Topic: /map_explore
-      Unreliable: false
-      Use Timestamp: false
-      Value: true
-    - Alpha: 0.699999988079071
-      Class: rviz/Map
-      Color Scheme: map
-      Draw Behind: false
-      Enabled: true
-      Name: Map
-      Topic: /map1
       Unreliable: false
       Use Timestamp: false
       Value: true

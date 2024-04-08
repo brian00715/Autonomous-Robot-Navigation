@@ -88,11 +88,13 @@ Explore::Explore()
 
 
   start_explore_ = false;
-  exploring_timer_.stop();
+  // exploring_timer_.stop();
   // Goal position publisher
   this->goal_pub_ = private_nh_.advertise<geometry_msgs::PoseStamped>("/move_base_simple/goal", 1);
   // Reached goal subscriber
   this->goal_reached_sub_ = private_nh_.subscribe("/final_pnc/reach_goal", 1, &Explore::goalReachedCallback, this);
+  // Start exploration subscriber
+  this->start_explore_sub_ = private_nh_.subscribe("/start_explore", 1, &Explore::startExploreCallback, this);
 }
 
 Explore::~Explore()
@@ -119,7 +121,7 @@ void Explore::visualizeFrontiers(
   green.b = 0;
   green.a = 1.0;
 
-  ROS_DEBUG("visualising %lu frontiers", frontiers.size());
+  // ROS_DEBUG("visualising %lu frontiers", frontiers.size());
   visualization_msgs::MarkerArray markers_msg;
   std::vector<visualization_msgs::Marker>& markers = markers_msg.markers;
   visualization_msgs::Marker m;
@@ -194,9 +196,9 @@ void Explore::makePlan()
   auto pose = costmap_client_.getRobotPose();
   // get frontiers sorted according to cost
   auto frontiers = search_.searchFrom(pose.position);
-  ROS_DEBUG("found %lu frontiers", frontiers.size());
+  // ROS_DEBUG("found %lu frontiers", frontiers.size());
   for (size_t i = 0; i < frontiers.size(); ++i) {
-    ROS_DEBUG("frontier %zd cost: %f", i, frontiers[i].cost);
+    // ROS_DEBUG("frontier %zd cost: %f", i, frontiers[i].cost);
   }
 
   if (frontiers.empty()) {
@@ -232,7 +234,7 @@ void Explore::makePlan()
   // black list if we've made no progress for a long time
   if (ros::Time::now() - last_progress_ > progress_timeout_) {
     frontier_blacklist_.push_back(target_position);
-    ROS_DEBUG("Adding current goal to black list");
+    // ROS_DEBUG("Adding current goal to black list");
     makePlan();
     return;
   }
@@ -280,10 +282,10 @@ void Explore::reachedGoal(const actionlib::SimpleClientGoalState& status,
                           const move_base_msgs::MoveBaseResultConstPtr&,
                           const geometry_msgs::Point& frontier_goal)
 {
-  ROS_DEBUG("Reached goal with status: %s", status.toString().c_str());
+  // ROS_DEBUG("Reached goal with status: %s", status.toString().c_str());
   if (status == actionlib::SimpleClientGoalState::ABORTED) {
     frontier_blacklist_.push_back(frontier_goal);
-    ROS_DEBUG("Adding current goal to black list");
+    // ROS_DEBUG("Adding current goal to black list");
   }
 
   // find new goal immediatelly regardless of planning frequency.
@@ -315,11 +317,13 @@ void Explore::goalReachedCallback(const final_pnc::ReachGoal::ConstPtr& msg)
 void Explore::startExploreCallback(const std_msgs::Bool::ConstPtr& msg)
 {
   if (msg->data) {
-    start();
+    // start();
     start_explore_ = true;
+    ROS_INFO("Exploration started.");
   } else {
-    exploring_timer_.stop();
+    // exploring_timer_.stop();
     start_explore_ = false;
+    ROS_INFO("Exploration stopped.");
   }
 }
 
@@ -340,10 +344,10 @@ void Explore::stop()
 int main(int argc, char** argv)
 {
   ros::init(argc, argv, "explore");
-  if (ros::console::set_logger_level(ROSCONSOLE_DEFAULT_NAME,
-                                     ros::console::levels::Debug)) {
-    ros::console::notifyLoggerLevelsChanged();
-  }
+  // if (ros::console::set_logger_level(ROSCONSOLE_DEFAULT_NAME,
+  //                                    ros::console::levels::Debug)) {
+  //   ros::console::notifyLoggerLevelsChanged();
+  // }
   explore::Explore explore;
   ros::spin();
 
