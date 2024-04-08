@@ -27,7 +27,7 @@ Cartographer requires the abseil-cpp library, which needs to be manually install
 Run the `install_abseil.sh` script:
 
     ```
-    src/ME5413_Final_Project/final_slam/cartographer/cartographer/scripts/install_abseil.sh
+    src/ME5413_Final_Project/third_party/cartographer/cartographer/scripts/install_abseil.sh
     ```
 
 ### Build and Install
