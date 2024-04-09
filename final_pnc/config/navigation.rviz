@@ -10,7 +10,6 @@ Panels:
         - /TF1/Frames1
         - /mpc1/Path1
         - /Path1
-        - /Pose1
       Splitter Ratio: 0.6628242135047913
     Tree Height: 627
   - Class: rviz/Selection
@@ -191,10 +190,7 @@ Visualization Manager:
             Grid: true
             InteractiveMarkers: true
             Localization:
-              AMCL PoseArray: true
-              AMCL PoseWithCovariance: true
-              Map: true
-              Odometry: true
+              "": true
               Value: true
             Map: true
             Path: true
@@ -216,7 +212,13 @@ Visualization Manager:
               Value: true
             TF: true
             Value: true
+            graph_planner:
+              "": true
+              Value: true
             mpc:
+              "": true
+              Value: true
+            sample_planner:
               "": true
               Value: true
           Zoom Factor: 1
@@ -646,12 +648,12 @@ Visualization Manager:
           Class: rviz/Path
           Color: 255; 255; 0
           Enabled: true
-          Head Diameter: 0.30000001192092896
-          Head Length: 0.20000000298023224
+          Head Diameter: 0.07999999821186066
+          Head Length: 0.07999999821186066
           Length: 0.30000001192092896
           Line Style: Billboards
           Line Width: 0.05000000074505806
-          Name: Path
+          Name: interpo_ref_path
           Offset:
             X: 0
             Y: 0
@@ -660,9 +662,9 @@ Visualization Manager:
           Pose Style: None
           Queue Size: 10
           Radius: 0.029999999329447746
-          Shaft Diameter: 0.10000000149011612
-          Shaft Length: 0.10000000149011612
-          Topic: /final_pnc/mpc/actual_ref_path
+          Shaft Diameter: 0.019999999552965164
+          Shaft Length: 0.07999999821186066
+          Topic: /final_pnc/mpc/interpo_ref_path
           Unreliable: false
           Value: true
         - Alpha: 1
@@ -680,6 +682,46 @@ Visualization Manager:
           Shaft Radius: 0.029999999329447746
           Shape: Axes
           Topic: /final_pnc/mpc/pred_pose
+          Unreliable: false
+          Value: true
+        - Alpha: 1
+          Buffer Length: 1
+          Class: rviz/Path
+          Color: 255; 0; 127
+          Enabled: true
+          Head Diameter: 0.30000001192092896
+          Head Length: 0.20000000298023224
+          Length: 0.30000001192092896
+          Line Style: Billboards
+          Line Width: 0.019999999552965164
+          Name: local_path
+          Offset:
+            X: 0
+            Y: 0
+            Z: 0
+          Pose Color: 255; 85; 255
+          Pose Style: None
+          Queue Size: 10
+          Radius: 0.029999999329447746
+          Shaft Diameter: 0.10000000149011612
+          Shaft Length: 0.10000000149011612
+          Topic: /final_pnc/mpc/local_path
+          Unreliable: false
+          Value: true
+        - Alpha: 1
+          Axes Length: 1
+          Axes Radius: 0.10000000149011612
+          Class: rviz/Pose
+          Color: 85; 85; 255
+          Enabled: true
+          Head Length: 0.30000001192092896
+          Head Radius: 0.10000000149011612
+          Name: win_interp_point
+          Queue Size: 10
+          Shaft Length: 1
+          Shaft Radius: 0.05000000074505806
+          Shape: Arrow
+          Topic: /final_pnc/mpc/win_interp_point
           Unreliable: false
           Value: true
       Enabled: true
@@ -770,8 +812,8 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 14.448871612548828
-        Y: 2.1528255939483643
+        X: 11.55424690246582
+        Y: -0.9628103971481323
         Z: -2.7418136596679688e-06
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806

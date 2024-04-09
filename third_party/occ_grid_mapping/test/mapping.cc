@@ -117,10 +117,10 @@ void laserCallback ( const sensor_msgs::LaserScanConstPtr& scan )
     /* 更新地图 */
     g_gmapper->updateMap ( scan, g_robot_pose );
     
-    /* 用opencv图像显示地图 */
-    cv::Mat map = g_map->toCvMat();
-    cv::imshow ( "map", map );
-    cv::waitKey ( 1 );
+    // /* 用opencv图像显示地图 */
+    // cv::Mat map = g_map->toCvMat();
+    // cv::imshow ( "map", map );
+    // cv::waitKey ( 1 );
     
     /* 发布地图 */
     nav_msgs::OccupancyGrid occ_map;

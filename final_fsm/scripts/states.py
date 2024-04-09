@@ -71,9 +71,13 @@ class Task1ToTask2(State):
                 self.robot.pub_goal.publish(self.goal_pose)
                 self.robot.goal_reached = False
             elif self.curr_phase == 2:
-                # self.curr_phase = 3
+                self.curr_phase = 3
                 self.robot.pub_percep_cmd.publish("red")
                 self.robot.percept_wait = "red"
+        # else:
+        #     if self.curr_phase == 2:
+        #         self.goal_pose = self.robot.get_goal_pose_from_config_map("/task1_crossing_1")
+        #         self.robot.pub_goal.publish(self.goal_pose)
         pass
         
 class Task2Entry(State):

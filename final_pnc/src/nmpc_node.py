@@ -21,19 +21,23 @@ import yaml
 from dynamic_reconfigure.server import Server as DynServer
 from geometry_msgs.msg import Pose, PoseArray, PoseStamped, Twist
 from nav_msgs.msg import Odometry, Path
+from nav_msgs.srv import GetPlan
 from nmpc_controller import NMPCC
 from std_msgs.msg import Bool
 from utils import (
     euclidian_dist_se2,
+    find_nearest_point,
     get_acute_angle,
     ndarray2pose_se2,
     path2ndarray_se2,
-    path_linear_interpolation,
+    path_lin_interpo_cut,
     pose2ndarray_se2,
     quat2yaw,
-    find_nearest_point,
+    reorder_path_points,
+    find_point_from_idx_dist,
+    path_lin_interpo,
 )
-from nav_msgs.srv import GetPlan
+
 from final_pnc.msg import ReachGoal
 
 
@@ -67,18 +71,20 @@ class NMPCNode:
         param_dict = yaml.safe_load(open(config_path, "r"))
         self.ref_path_topic = param_dict["ref_path_topic"]
         self.odom_topic = param_dict["odom_topic"]
+        self.make_plan_topic = param_dict["make_plan_topic"]
+        self.make_plan_local_topic = param_dict["make_plan_local_topic"]
         self.xy_tol = param_dict["xy_tol"]
         self.ang_tol = np.deg2rad(param_dict["ang_tol"])
         self.vel_ref = param_dict["vel_ref"]
         self.rot_th = np.deg2rad(param_dict["rot_th"])
         self.freq = param_dict["freq"]
+        self.local_window_size = param_dict["local_window_size"]
 
-        self.yaw_pid = PIDController(kp=1, ki=0, kd=0.1)
+        self.yaw_pid = PIDController(kp=2, ki=0, kd=0.1)
 
         if self.method == "mpc":
             self.N = param_dict["N"]
             self.T = param_dict["T"]
-            self.horizon_len = self.T * self.N * self.vel_ref
             prob_params = {
                 "control_dim": 2,
                 "state_dim": 3,
@@ -108,7 +114,7 @@ class NMPCNode:
         self.enable_ctrl = False
         self.curr_odom = Odometry()
         self.ref_path = None
-        self.actual_ref_path = None  # interpolated path from the original reference path given the MPC parameters
+        self.interpo_ref_path = None  # interpolated path from the original reference path given the MPC parameters
         self.curr_pose = None
         self.goal_pose = None
         self.global_path = None
@@ -119,7 +125,9 @@ class NMPCNode:
         # pubs
         self.pub_cmd_vel = rospy.Publisher("/cmd_vel", Twist, queue_size=1)
         self.pred_pose_pub = rospy.Publisher("/final_pnc/mpc/pred_pose", PoseArray, queue_size=1)
-        self.actual_ref_path_pub = rospy.Publisher("/final_pnc/mpc/actual_ref_path", Path, queue_size=1)
+        self.interpo_ref_path_pub = rospy.Publisher("/final_pnc/mpc/interpo_ref_path", Path, queue_size=1)
+        self.local_path_pub = rospy.Publisher("/final_pnc/mpc/local_path", Path, queue_size=1)
+        self.win_interp_point_pub = rospy.Publisher("/final_pnc/mpc/win_interp_point", PoseStamped, queue_size=1)
         # subs
         self.odom_sub = rospy.Subscriber(self.odom_topic, Odometry, self.robot_odom_callback)
         # self.ref_path_sub = rospy.Subscriber(self.ref_path_topic, Path, self.ref_path_callback)
@@ -127,7 +135,12 @@ class NMPCNode:
         self.reach_pub = rospy.Publisher("/final_pnc/reach_goal", ReachGoal, queue_size=1)
         self.set_vel_sub = rospy.Subscriber("/final_pnc/set_ref_vel", Twist, self.set_speed_callback)
         # srvs
-        self.get_plan_srv = rospy.ServiceProxy("/move_base/NavfnROS/make_plan", GetPlan)
+        if rospy.wait_for_service(self.make_plan_topic, timeout=5):
+            rospy.loginfo(f"Service {self.make_plan_topic} is available")
+        if rospy.wait_for_service(self.make_plan_local_topic, timeout=5):
+            rospy.loginfo(f"Service {self.make_plan_local_topic} is available")
+        self.get_plan_srv = rospy.ServiceProxy(self.make_plan_topic, GetPlan)
+        self.get_plan_local_srv = rospy.ServiceProxy(self.make_plan_local_topic, GetPlan)
         # self.dyn_client = DynServer(path_publisherConfig, self.dyn_callback)
 
     def set_speed_callback(self, msg: Twist):
@@ -141,8 +154,14 @@ class NMPCNode:
         self.goal_pose = msg
         curr_pose = PoseStamped()
         curr_pose.header = self.curr_odom.header
+        curr_pose.header.frame_id = "map"
         curr_pose.pose = self.curr_odom.pose.pose
         self.global_path = self.get_plan_srv.call(curr_pose, msg, 0).plan
+        if len(self.global_path.poses) == 0:
+            rospy.logerr("Empty global path")
+            self.enable_ctrl = False
+            return
+        self.global_path = path_lin_interpo(self.global_path, 0.2)
         rospy.loginfo(f"New goal {(msg.pose.position.x,msg.pose.position.y,quat2yaw(msg.pose.orientation))} received!")
         self.rot2start_yaw = True
         self.enable_ctrl = True
@@ -150,7 +169,7 @@ class NMPCNode:
     def ref_path_callback(self, msg: Path):
         self.ref_path = msg
         if self.enable_ctrl:
-            self.actual_ref_path = path_linear_interpolation(msg, self.T, self.N + 1, self.vel_ref)
+            self.interpo_ref_path = path_lin_interpo_cut(msg, self.T, self.N + 1, self.vel_ref)
 
     def output_tum_format(self, odom, filename="trajectory.txt"):
         """
@@ -194,11 +213,11 @@ class NMPCNode:
             self.curr_odom.pose.pose.position.y,
             quat2yaw(self.curr_odom.pose.pose.orientation),
         ]
-
+        # rospy.loginfo(f"Current pose: {self.curr_pose}")
         # self.output_tum_format(odom)
 
     def local_path_callback(self, msg: Path):
-        self.actual_ref_path = [
+        self.interpo_ref_path = [
             [
                 msg.poses[i].pose.position.x,
                 msg.poses[i].pose.position.y,
@@ -210,23 +229,19 @@ class NMPCNode:
         #     self.local_ref_path += [self.local_ref_path[-1]] * (self.N + 1 - len(self.local_ref_path))
 
         if self.curr_pose is not None:
-            for i in range(len(self.actual_ref_path)):
-                # if self.local_ref_path[i][2] < -math.pi:
-                #     self.local_ref_path[i][2] += math.pi
-                # if self.local_ref_path[i][2] > math.pi:
-                #     self.local_ref_path[i][2] -= math.pi
-                diff = self.actual_ref_path[i][2] - self.curr_pose[2]
+            for i in range(len(self.interpo_ref_path)):
+                diff = self.interpo_ref_path[i][2] - self.curr_pose[2]
                 while diff > math.pi:
                     diff -= 2 * math.pi
                 while diff < -math.pi:
                     diff += 2 * math.pi
-                self.actual_ref_path[i][2] = self.curr_pose[2] + diff
+                self.interpo_ref_path[i][2] = self.curr_pose[2] + diff
 
     def compute_cmd_vel_mpc(self):
-        if self.actual_ref_path is None:
+        if self.interpo_ref_path is None:
             return
 
-        mpc_ref_path = path2ndarray_se2(self.actual_ref_path)
+        mpc_ref_path = path2ndarray_se2(self.interpo_ref_path)
         u = self.controller.solve(self.curr_pose, mpc_ref_path, [[self.vel_ref, 0]] * self.N)
         x_pred = self.controller.x_opti
         pose_array = PoseArray()
@@ -254,10 +269,10 @@ class NMPCNode:
         return K
 
     def compute_cmd_vel_lqr(self):
-        if self.actual_ref_path is None or len(self.actual_ref_path) == 0:
+        if self.interpo_ref_path is None or len(self.interpo_ref_path) == 0:
             return Twist()
 
-        ref_pose = self.actual_ref_path[0]
+        ref_pose = self.interpo_ref_path[0]
         x_ref, y_ref, yaw_ref = ref_pose[0], ref_pose[1], ref_pose[2]
         x, y, yaw = self.curr_pose[0], self.curr_pose[1], self.curr_pose[2]
 
@@ -287,35 +302,64 @@ class NMPCNode:
         cmd_vel = Twist()
         while not rospy.is_shutdown():
 
-            if self.curr_pose is not None and self.enable_ctrl:
+            if self.curr_odom is not None and self.enable_ctrl:
 
                 if self.is_xy_reached():
+                    rospy.loginfo_throttle(1, "Goal reached!")
                     cmd_vel = Twist()
                     self.pub_cmd_vel.publish(cmd_vel)  # stop immediately
                     self.rot2start_yaw = False
                     self.rot2goal_yaw = True
 
-                idx = find_nearest_point(self.global_path, self.curr_pose)
-                if idx is None:
-                    rospy.logwarn("can't find nearest point")
-                    continue
-                # rospy.loginfo(f"nearest point index: {idx}, pose:{self.global_path.poses[idx].pose.position}")
-                self.ref_path = Path()
-                self.ref_path.header = self.global_path.header
-                self.ref_path.poses = self.global_path.poses[idx:]
-                self.actual_ref_path = path_linear_interpolation(self.ref_path, self.T, self.N + 1, self.vel_ref)
+                idx_odom_in_path = find_nearest_point(self.global_path, self.curr_pose)
+                if 0:
+                    if idx_odom_in_path is None:
+                        rospy.logwarn("can't find nearest point")
+                        continue
+                    self.ref_path = Path()
+                    self.ref_path.header = self.global_path.header
+                    self.ref_path.poses = self.global_path.poses[idx_odom_in_path:]
+                if 1:
+                    win_inter_point = find_point_from_idx_dist(
+                        self.global_path, idx_odom_in_path, self.local_window_size
+                    )
+                    if win_inter_point is None:
+                        rospy.logwarn("can't find nearest point")
+                        continue
+                    self.win_interp_point_pub.publish(win_inter_point)
+                    curr_pose_stam = PoseStamped()
+                    curr_pose_stam.header = self.curr_odom.header
+                    curr_pose_stam.header.frame_id = "map"
+                    curr_pose_stam.pose = self.curr_odom.pose.pose
+                    local_path = self.get_plan_local_srv.call(curr_pose_stam, win_inter_point, 0).plan
+                    if local_path is None or len(local_path.poses) == 0:
+                        local_path = self.get_plan_local_srv.call(
+                            curr_pose_stam, self.goal_pose, 0
+                        ).plan  # if fail, replan to goal
+                        if local_path is None or len(local_path.poses) == 0:
+                            rospy.logwarn("Empty reference path")
+                            continue
+                    self.local_path_pub.publish(local_path)
+                    self.ref_path = local_path
+
+                self.interpo_ref_path = path_lin_interpo_cut(self.ref_path, self.T, self.N + 1, self.vel_ref)
+                self.interpo_ref_path.header = self.curr_odom.header
+                self.interpo_ref_path_pub.publish(self.interpo_ref_path)
 
                 if self.rot2start_yaw:
-                    ref_point = pose2ndarray_se2(self.actual_ref_path.poses[2].pose)
+                    rospy.loginfo_throttle(1, "Rotating to start yaw")
+                    ref_point = pose2ndarray_se2(self.interpo_ref_path.poses[2].pose)
                     ref_yaw = np.arctan2(ref_point[1] - self.curr_pose[1], ref_point[0] - self.curr_pose[0])
                     ref_yaw = get_acute_angle(self.curr_pose[2], ref_yaw)
                     # rospy.loginfo(f"Rotating: {self.curr_pose[2]:.2f} -> {ref_yaw:.2f}")
                     if abs(ref_yaw - self.curr_pose[2]) < self.rot_th:
                         self.rot2start_yaw = False
+                        self.rot2goal_yaw = False
                         continue
                     cmd_vel.linear.x = 0
                     cmd_vel.angular.z = self.yaw_pid.get_output(self.curr_pose[2], ref_yaw, 1 / self.freq)
                 elif self.rot2goal_yaw:
+                    rospy.loginfo_throttle(1, "Rotating to goal yaw")
                     ref_yaw = quat2yaw(self.goal_pose.pose.orientation)
                     ref_yaw = get_acute_angle(self.curr_pose[2], ref_yaw)
                     # rospy.loginfo(f"Rotating: {self.curr_pose[2]:.2f} -> {ref_yaw:.2f}")
@@ -332,11 +376,13 @@ class NMPCNode:
                     cmd_vel.linear.x = 0
                     cmd_vel.angular.z = self.yaw_pid.get_output(self.curr_pose[2], ref_yaw, 1 / self.freq)
                 else:
+                    rospy.loginfo_throttle(1, "Tracking path")
                     if self.method == "mpc":
                         cmd_vel = self.compute_cmd_vel_mpc()
                     elif self.method == "lqr":
                         cmd_vel = self.compute_cmd_vel_lqr()
-                    self.actual_ref_path_pub.publish(self.actual_ref_path)
+            else:
+                cmd_vel = Twist()
 
             self.pub_cmd_vel.publish(cmd_vel)
             rate.sleep()

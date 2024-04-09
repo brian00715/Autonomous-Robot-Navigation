@@ -8,11 +8,12 @@
 ├── final_percep # Perception package
 ├── final_slam # SLAM package
 ├── interactive_tools
-├── jackal_description 
+├── jackal_description
 └── me5413_world
 ```
 
 Please create a new workspace '`ME5413_final_ws`' and clone this repo
+
 ```shell
 cd ~
 mkdir ME5413_final_ws
@@ -25,21 +26,24 @@ git clone https://github.com/brian00715/ME5413_Final_Project
 FIXME: Remember to highlight that a new workspace is required.
 
 # Installation guide
+
 ```shell
 sudo apt install ros-noetic-rviz-imu-plugin
 sudo apt install ros-noetic-dwa-local-planner
 ```
 
 Python dependencies
+
 ```shell
-pip install markupsafe==1.1.1
 pip install easyocr
 pip install --upgrade Pillow
+pip install markupsafe==1.1.1 ipdb
 ```
 
 # Running
 
 - mapping
+
 ```shell
 roslaunch me5413_world world.launch
 roslaunch final_slam mapping_carto.launch
@@ -49,15 +53,37 @@ roslaunch final_slam mapping_carto.launch
 ```shell
 roslaunch me5413_world world.launch
 roslaunch final_fsm fsm.launch
+- localization
+
+```shell
+roslaunch final_slam localization_carto.launch
 ```
 
+- navigation
+
+```shell
+roslaunch final_pnc navigation.launch
+```
+
+# API
+
+## `nmpc_node`
+
+### Subscribed Topics
+
+
+### Published Topics
+
+## State Machine
 
 ---
-# BELOW IS THE ORIGINAL  ```readme``` FILE 
+
+# BELOW IS THE ORIGINAL `readme` FILE
 
 # ME5413_Final_Project
 
 NUS ME5413 Autonomous Mobile Robotics Final Project
+
 > Authors: [Christina](https://github.com/ldaowen), [Yuhang](https://github.com/yuhang1008), [Dongen](https://github.com/nuslde), and [Shuo](https://github.com/SS47816)
 
 ![Ubuntu 20.04](https://img.shields.io/badge/OS-Ubuntu_20.04-informational?style=flat&logo=ubuntu&logoColor=white&color=2bbc8a)
@@ -71,39 +97,39 @@ NUS ME5413 Autonomous Mobile Robotics Final Project
 
 ## Dependencies
 
-* System Requirements:
-  * Ubuntu 20.04 (18.04 not yet tested)
-  * ROS Noetic (Melodic not yet tested)
-  * C++11 and above
-  * CMake: 3.0.2 and above
-* This repo depends on the following standard ROS pkgs:
-  * `roscpp`
-  * `rospy`
-  * `rviz`
-  * `std_msgs`
-  * `nav_msgs`
-  * `geometry_msgs`
-  * `visualization_msgs`
-  * `tf2`
-  * `tf2_ros`
-  * `tf2_geometry_msgs`
-  * `pluginlib`
-  * `map_server`
-  * `gazebo_ros`
-  * `jsk_rviz_plugins`
-  * `jackal_gazebo`
-  * `jackal_navigation`
-  * `velodyne_simulator`
-  * `teleop_twist_keyboard`
-* And this [gazebo_model](https://github.com/osrf/gazebo_models) repositiory
+- System Requirements:
+  - Ubuntu 20.04 (18.04 not yet tested)
+  - ROS Noetic (Melodic not yet tested)
+  - C++11 and above
+  - CMake: 3.0.2 and above
+- This repo depends on the following standard ROS pkgs:
+  - `roscpp`
+  - `rospy`
+  - `rviz`
+  - `std_msgs`
+  - `nav_msgs`
+  - `geometry_msgs`
+  - `visualization_msgs`
+  - `tf2`
+  - `tf2_ros`
+  - `tf2_geometry_msgs`
+  - `pluginlib`
+  - `map_server`
+  - `gazebo_ros`
+  - `jsk_rviz_plugins`
+  - `jackal_gazebo`
+  - `jackal_navigation`
+  - `velodyne_simulator`
+  - `teleop_twist_keyboard`
+- And this [gazebo_model](https://github.com/osrf/gazebo_models) repositiory
 
 ## Installation
 
 This repo is a ros workspace, containing three rospkgs:
 
-* `interactive_tools` are customized tools to interact with gazebo and your robot
-* `jackal_description` contains the modified jackal robot model descriptions
-* `me5413_world` the main pkg containing the gazebo world, and the launch files
+- `interactive_tools` are customized tools to interact with gazebo and your robot
+- `jackal_description` contains the modified jackal robot model descriptions
+- `me5413_world` the main pkg containing the gazebo world, and the launch files
 
 **Note:** If you are working on this project, it is encouraged to fork this repository and work on your own fork!
 
@@ -120,7 +146,7 @@ rosdep install --from-paths src --ignore-src -r -y
 
 # Build
 catkin_make
-# Source 
+# Source
 source devel/setup.bash
 ```
 
@@ -128,8 +154,8 @@ To properly load the gazebo world, you will need to have the necessary model fil
 
 There are two sources of models needed:
 
-* [Gazebo official models](https://github.com/osrf/gazebo_models)
-  
+- [Gazebo official models](https://github.com/osrf/gazebo_models)
+
   ```bash
   # Create the destination directory
   cd
@@ -142,7 +168,7 @@ There are two sources of models needed:
   cp -r ~/gazebo_models/* ~/.gazebo/models
   ```
 
-* [Our customized models](https://github.com/NUS-Advanced-Robotics-Centre/ME5413_Final_Project/tree/main/src/me5413_world/models)
+- [Our customized models](https://github.com/NUS-Advanced-Robotics-Centre/ME5413_Final_Project/tree/main/src/me5413_world/models)
 
   ```bash
   # Copy the customized models into the `~/.gazebo/models` directory
@@ -209,29 +235,29 @@ roslaunch me5413_world navigation.launch
 
 ### 1. Map the environment
 
-* You may use any SLAM algorithm you like, any type:
-  * 2D LiDAR
-  * 3D LiDAR
-  * Vision
-  * Multi-sensor
-* Verify your SLAM accuracy by comparing your odometry with the published `/gazebo/ground_truth/state` topic (`nav_msgs::Odometry`), which contains the gournd truth odometry of the robot.
-* You may want to use tools like [EVO](https://github.com/MichaelGrupp/evo) to quantitatively evaluate the performance of your SLAM algorithm.
+- You may use any SLAM algorithm you like, any type:
+  - 2D LiDAR
+  - 3D LiDAR
+  - Vision
+  - Multi-sensor
+- Verify your SLAM accuracy by comparing your odometry with the published `/gazebo/ground_truth/state` topic (`nav_msgs::Odometry`), which contains the gournd truth odometry of the robot.
+- You may want to use tools like [EVO](https://github.com/MichaelGrupp/evo) to quantitatively evaluate the performance of your SLAM algorithm.
 
 ### 2. Using your own map, navigate your robot
 
-* From the starting point, move to the given pose within each area in sequence
-  * Assembly Line 1, 2
-  * Random Box 1, 2, 3, 4
-  * Delivery Vehicle 1, 2, 3
-* We have provided you a GUI in RVIZ that allows you to click and publish these given goal poses to the `/move_base_simple/goal` topic:
-  
+- From the starting point, move to the given pose within each area in sequence
+  - Assembly Line 1, 2
+  - Random Box 1, 2, 3, 4
+  - Delivery Vehicle 1, 2, 3
+- We have provided you a GUI in RVIZ that allows you to click and publish these given goal poses to the `/move_base_simple/goal` topic:
+
   ![rviz_panel_image](me5413_world/media/rviz_panel.png)
 
-* We also provides you four topics (and visualized in RVIZ) that computes the real-time pose error between your robot and the selelcted goal pose:
-  * `/me5413_world/absolute/heading_error` (in degrees, wrt `world` frame, `std_msgs::Float32`)
-  * `/me5413_world/absolute/position_error` (in meters, wrt `world` frame, `std_msgs::Float32`)
-  * `/me5413_world/relative/heading_error` (in degrees, wrt `map` frame, `std_msgs::Float32`)
-  * `/me5413_world/relative/position_error` (in meters wrt `map` frame, `std_msgs::Float32`)
+- We also provides you four topics (and visualized in RVIZ) that computes the real-time pose error between your robot and the selelcted goal pose:
+  - `/me5413_world/absolute/heading_error` (in degrees, wrt `world` frame, `std_msgs::Float32`)
+  - `/me5413_world/absolute/position_error` (in meters, wrt `world` frame, `std_msgs::Float32`)
+  - `/me5413_world/relative/heading_error` (in degrees, wrt `map` frame, `std_msgs::Float32`)
+  - `/me5413_world/relative/position_error` (in meters wrt `map` frame, `std_msgs::Float32`)
 
 ## Contribution
 
@@ -239,9 +265,9 @@ You are welcome contributing to this repo by opening a pull-request
 
 We are following:
 
-* [Google C++ Style Guide](https://google.github.io/styleguide/cppguide.html),
-* [C++ Core Guidelines](https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#main),
-* [ROS C++ Style Guide](http://wiki.ros.org/CppStyleGuide)
+- [Google C++ Style Guide](https://google.github.io/styleguide/cppguide.html),
+- [C++ Core Guidelines](https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#main),
+- [ROS C++ Style Guide](http://wiki.ros.org/CppStyleGuide)
 
 ## License
 

@@ -5,7 +5,7 @@
   </node>
 
   <!-- Launch Cartographer -->
-  <include file="$(find cartographer_ros)/launch/ME5413_final_mapping_3d.launch" />
+  <include file="$(find final_slam)/launch/ME5413_final_mapping_3d.launch" />
 
   <!-- Launch Rviz with our settings -->
   <node type="rviz" name="rviz" pkg="rviz" args="-d $(find final_slam)/config/gmapping.rviz"
