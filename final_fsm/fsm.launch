@@ -14,7 +14,6 @@
   <include file="$(find final_pnc)/launch/navigation.launch" />
 
   <!-- Launch Localization -->
-  <node pkg="final_slam" type="get_gt_odom.py" name="get_gt_odom" output="screen" />
   <include file="$(find final_slam)/launch/localization_carto.launch" />
 
   <!-- Launch Perception -->

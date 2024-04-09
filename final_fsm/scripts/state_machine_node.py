@@ -15,14 +15,13 @@ init_flag = True
 init_arg = None
 
 # determine whether the robot have reached the goal
-turning_points = [(4.75, -6.5, 1), (4.75, 1.2, 1.5), (0.7, 2.7, 1.5), (11.5, 3.5, 1)]
 
 
-def near_turning_points(robot_pose_stamped, turning_points):
+def near_turning_points(robot_pose_stamped, turning_points, margin=0.1):
     if robot_pose_stamped is None or turning_points is None:
         return False
     for point in turning_points:
-        if abs(point[0] - robot_pose_stamped.pose.position.x) < point[2] and abs(point[1] - robot_pose_stamped.pose.position.y) < point[2]:
+        if abs(point[0] - robot_pose_stamped.pose.position.x) < margin and abs(point[1] - robot_pose_stamped.pose.position.y) < margin:
             return True
     return False
 
@@ -219,11 +218,7 @@ if __name__ == '__main__':
 
         # publish the speed command
         cmd_vel = Twist()
-        if near_turning_points(robot.robot_pose, turning_points):
-            cmd_vel.linear.x = 1
-            robot.pub_vel.publish(cmd_vel)
-        else:
-            cmd_vel.linear.x = 1.5
-            robot.pub_vel.publish(cmd_vel)
+        cmd_vel.linear.x = 0.5
+        robot.pub_vel.publish(cmd_vel)
 
         rate.sleep()
