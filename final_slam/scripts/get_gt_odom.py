@@ -60,9 +60,8 @@ class GetGtOdom:
                             self.gt_odom[self.model_name[i]].pose.pose.orientation.w,
                         ),
                         rospy.Time.now(),
-                        # self.gt_odom[self.model_name[i]].child_frame_id,
-                        "base_link",
-                        "odom",
+                        "/base_link",
+                        "/odom",
                     )
 
 

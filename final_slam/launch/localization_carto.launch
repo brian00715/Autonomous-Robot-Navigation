@@ -8,6 +8,7 @@
 
   <!-- Launch Cartographer -->
   <include file="$(find final_slam)/launch/ME5413_final_localization_2d.launch" />
+  <node pkg="final_slam" type="get_gt_odom.py" name="get_gt_odom" output="screen" />
 
   <!-- Launch Rviz with our settings -->
   <!-- <node type="rviz" name="rviz" pkg="rviz" args="-d $(find final_slam)/config/gmapping.rviz"

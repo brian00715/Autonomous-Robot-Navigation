@@ -1,0 +1,17 @@
+name: jackal_ci
+
+on: [push, pull_request]
+
+jobs:
+  jackal_noetic_ci:
+    name: Noetic
+    strategy:
+      matrix:
+        env:
+          - {ROS_DISTRO: noetic, ROS_REPO: main}
+          - {ROS_DISTRO: noetic, ROS_REPO: testing}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - uses: 'ros-industrial/industrial_ci@master'
+        env: ${{matrix.env}}

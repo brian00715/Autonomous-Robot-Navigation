@@ -154,6 +154,7 @@ class NMPCNode:
         self.goal_pose = msg
         curr_pose = PoseStamped()
         curr_pose.header = self.curr_odom.header
+        curr_pose.header.frame_id = "map"
         curr_pose.pose = self.curr_odom.pose.pose
         self.global_path = self.get_plan_srv.call(curr_pose, msg, 0).plan
         if len(self.global_path.poses) == 0:
@@ -328,6 +329,7 @@ class NMPCNode:
                     self.win_interp_point_pub.publish(win_inter_point)
                     curr_pose_stam = PoseStamped()
                     curr_pose_stam.header = self.curr_odom.header
+                    curr_pose_stam.header.frame_id = "map"
                     curr_pose_stam.pose = self.curr_odom.pose.pose
                     local_path = self.get_plan_local_srv.call(curr_pose_stam, win_inter_point, 0).plan
                     if local_path is None or len(local_path.poses) == 0:
