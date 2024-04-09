@@ -8,9 +8,9 @@ pause = True
 
 # ***************
 #   OBSTACLE
-M = 70
+M = 80
 #   unknown
-N = 50
+N = 35
 #   free
 # ----0-----
 #   unknown
@@ -44,7 +44,7 @@ if __name__ == '__main__':
         rospy.loginfo("Map subscriber node started")
 
         # 订阅map话题
-        rospy.Subscriber('/map', OccupancyGrid, map_callback)
+        rospy.Subscriber('/map1', OccupancyGrid, map_callback)
 
         rospy.Subscriber('/start_explore', Bool, pause_callback)
 

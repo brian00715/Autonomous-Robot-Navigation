@@ -47,6 +47,7 @@ class Robot:
         self.pub_percep_cmd = rospy.Publisher("/percep/cmd", String, queue_size=1)
         self.sub_percept_red = rospy.Subscriber("/percep/red", String, self.percep_red_callback)
         self.sub_percpet_number_pose = rospy.Subscriber("/percep/pose", PoseStamped, self.percep_number_pose_callback)
+        self.sub_percept_number = rospy.Subscriber("/percep/numbers", String, self.percep_number_callback)
         self.number_pose = None
 
         self.pub_explore = rospy.Publisher("/start_explore", Bool, queue_size=1)
@@ -130,10 +131,16 @@ class Robot:
     def percep_number_pose_callback(self, pose):
         if self.percept_wait != "number":
             return
-
         # Get the number pose in map frame
         self.number_pose = pose
-        self.percept_wait = ""
+        # self.percept_wait = ""
+    
+    def percep_number_callback(self, data):
+        if self.percept_wait != "number":
+            return
+        if data.data == "number found":
+            self.pub_explore.publish(False)
+
 
     def get_goal_pose_from_config_map(self, name):
         P_world_goal = self.get_goal_pose_from_config(name)
@@ -187,6 +194,7 @@ if __name__ == '__main__':
     rospy.init_node('robot_state_machine', anonymous=True)
     robot = Robot()
     # 订阅tf tree
+
     
 
     rate = rospy.Rate(10)  # 10hz
