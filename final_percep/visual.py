@@ -35,7 +35,7 @@ class Visual:
         self.projection = np.array(self.camera_info.P).reshape(3, 4)
         self.distortion = np.array(self.camera_info.D)
         self.frame = self.camera_info.header.frame_id
-        self.reader = easyocr.Reader(['en'])
+        self.reader = easyocr.Reader([])
         self.listener = tf.TransformListener()
         self.scansub = rospy.Subscriber('/front/scan', LaserScan, self.scan_callback)
         self.numberposelists = np.zeros((10, 2))
@@ -64,14 +64,19 @@ class Visual:
             else:
                 self.redpub.publish('false')
         elif self.redcheck == 'number':
+            self.listener.lookupTransform('tim551', self.frame, rospy.Time(0))
+            self.listener.lookupTransform('/map', '/tim551', rospy.Time(0))
             gray = cv2.cvtColor(cv_image, cv2.COLOR_BGR2GRAY)
             result = self.reader.readtext(gray)
+            result = self.reader.readtext(cv_image)
             for detection in result:
                 if len(detection[1]) > 1:
                     continue
-                if detection[2] < 0.985:
+                if detection[2] < 0.99:
                     continue
                 if detection[1] < '1' or detection[1] > '9':
+                    continue
+                if abs(detection[0][0][1] - detection[0][2][1]) < 50:
                     continue
                 # Get the conter of the bounding box in [x, y] format
                 center = [(x + y)/2 for x, y in zip(detection[0][0], detection[0][2])]
@@ -91,7 +96,7 @@ class Visual:
                 cur_p.pose.orientation.w = 1
 
                 # Transform the direction to other frame
-                self.listener.lookupTransform('tim551', self.frame, rospy.Time(0))
+                
                 transformed = self.listener.transformPose('tim551', cur_p)
 
                 
@@ -107,6 +112,7 @@ class Visual:
                 y = distance * np.sin(angle)
                 point_p = PoseStamped()
                 point_p.header.frame_id = 'tim551'
+                point_p.header.stamp = msg.header.stamp
                 point_p.pose.position.x = x
                 point_p.pose.position.y = y
                 point_p.pose.position.z = 0
@@ -125,11 +131,13 @@ class Visual:
                 # Check if the point is valid
                 if x == np.inf or x == -np.inf or x == np.nan or y == np.inf or y == -np.inf or y == np.nan:
                     continue  
+                if x > 17 or x < 7 or y> 2 or y < -7.2:
+                    continue
                 # Save the position of the number
                 numberpose = np.array([x, y])
                 idx = int(detection[1])
                 self.numberposelists[idx] = numberpose if self.numberposelists[idx, 0] == 0 \
-                    and self.numberposelists[idx, 1] == 0 else self.numberposelists[idx] * 0.9 + numberpose * 0.1
+                    and self.numberposelists[idx, 1] == 0 else self.numberposelists[idx] * 0.8 + numberpose * 0.2
                 self.percepnums[idx] = 1
 
                 # Pulish the direction and the id of the object
@@ -141,6 +149,7 @@ class Visual:
                     goal_y = self.numberposelists[int(self.goal), 1]
                     goal_p = PoseStamped()
                     goal_p.header.frame_id = 'map'
+                    goal_p.header.stamp = msg.header.stamp
                     goal_p.pose.position.x = goal_x
                     goal_p.pose.position.y = goal_y
                     goal_p.pose.position.z = 0
@@ -179,6 +188,8 @@ class Visual:
             print(self.goal)
 
     def scan_callback(self, msg):
+        if self.is_processing:
+            return
         self.scan = msg.ranges
         self.scanparams = [msg.angle_min, msg.angle_max, msg.angle_increment]
 
