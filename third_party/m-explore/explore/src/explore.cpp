@@ -87,7 +87,7 @@ Explore::Explore()
                                [this](const ros::TimerEvent&) { makePlan(); });
 
 
-  start_explore_ = false;
+  start_explore_ = true;
   // exploring_timer_.stop();
   // Goal position publisher
   this->goal_pub_ = private_nh_.advertise<geometry_msgs::PoseStamped>("/move_base_simple/goal", 1);

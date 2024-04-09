@@ -39,7 +39,7 @@ class Task1Tracking(State):
         # if is_goal_reached(self.goal_pose, self.robot.robot_pose):
         if self._get_goal_reached():
             rospy.loginfo("Goal Reached")
-            self.robot.set_state(self.robot.task1_to_task2_state, None)
+            self.robot.set_state(self.robot.idle_state, None)
         pass
 
 
@@ -60,17 +60,17 @@ class Task1ToTask2(State):
         # if is_goal_reached(self.goal_pose, self.robot.robot_pose):
         if self._get_goal_reached():
             rospy.loginfo("Goal Reached")
-            if self.curr_phase == 0:
-                self.curr_phase = 1
-                self.goal_pose = self.robot.get_goal_pose_from_config_map("/task1_complete_2")
-                self.robot.pub_goal.publish(self.goal_pose)
-                self.robot.goal_reached = False
-            elif self.curr_phase == 1:
-                self.curr_phase = 2
-                self.goal_pose = self.robot.get_goal_pose_from_config_map("/task1_crossing_1")
-                self.robot.pub_goal.publish(self.goal_pose)
-                self.robot.goal_reached = False
-            elif self.curr_phase == 2:
+            # if self.curr_phase == 0:
+            #     self.curr_phase = 1
+            #     self.goal_pose = self.robot.get_goal_pose_from_config_map("/task1_complete_2")
+            #     self.robot.pub_goal.publish(self.goal_pose)
+            #     self.robot.goal_reached = False
+            # elif self.curr_phase == 1:
+            #     self.curr_phase = 2
+            #     self.goal_pose = self.robot.get_goal_pose_from_config_map("/task1_crossing_1")
+            #     self.robot.pub_goal.publish(self.goal_pose)
+            #     self.robot.goal_reached = False
+            if self.curr_phase == 2:
                 self.curr_phase = 3
                 self.robot.pub_percep_cmd.publish("red")
                 self.robot.percept_wait = "red"
@@ -92,9 +92,10 @@ class Task2Entry(State):
             self.robot.goal_reached = False
 
     def execute(self):
-        if is_goal_reached(self.goal_pose, self.robot.robot_pose):
+        if self._get_goal_reached():
             rospy.loginfo("Goal Reached")
-            self.robot.set_state(self.robot.idle_state)
+            # self.robot.set_state(self.robot.task2_state, None)
+            self.robot.set_state(self.robot.task2_state, None)
         pass
     
 
@@ -110,6 +111,7 @@ class Task2State(State):
         self.robot.percept_wait = "number"
         self.robot.number_pose = None
         self.curr_phase = 0
+        self.robot.goal_reached = False
 
 
     def execute(self):
@@ -117,7 +119,7 @@ class Task2State(State):
             if self.robot.number_pose is not None:
                 # self.robot.pub_percep_cmd.publish("idle")
                 # self.robot.percept_wait = ""
-                if is_goal_reached(self.robot.number_pose, self.robot.robot_pose, 0.2):
+                if is_goal_reached(self.robot.number_pose, self.robot.robot_pose, 0.2) or self._get_goal_reached():
                     rospy.loginfo("Goal Reached")
                     self.curr_phase = 1
                     self.robot.pub_percep_cmd.publish("idle")
@@ -126,6 +128,8 @@ class Task2State(State):
 
                 self.robot.pub_goal.publish(self.robot.number_pose)
                 self.robot.number_pose = None
+            # else:
+            #     self.robot.pub_explore.publish(True)
             
         elif self.curr_phase == 1:
             pass
@@ -137,8 +141,12 @@ class Task2State(State):
 class Task3Tracking(State):
     def init(self, goal_pose):
         self.robot.pub_goal.publish(goal_pose)
+        self.robot.goal_reached = False
 
     def execute(self):
+        if self._get_goal_reached():
+            rospy.loginfo("Goal Reached")
+            self.robot.set_state(self.robot.idle_state, None)
         pass
 
 class IdleState(State):
