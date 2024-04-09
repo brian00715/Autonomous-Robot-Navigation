@@ -223,7 +223,7 @@ if __name__ == '__main__':
         if near_turning_points(robot.robot_pose, turning_points):
             cmd_vel.linear.x = 1
         elif robot.current_state == robot.task2_state:
-            cmd_vel.linear.x = 0.5
+            cmd_vel.linear.x = 0.25
         else:
             cmd_vel.linear.x = 1.5
         robot.pub_vel.publish(cmd_vel)

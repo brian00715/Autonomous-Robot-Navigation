@@ -1,26 +1,38 @@
 import rospy
 from geometry_msgs.msg import PoseStamped, Pose
 from std_msgs.msg import String
+import dynamic_reconfigure.client
 
 
 def is_goal_reached(goal_pose_stamped, robot_pose_stamped, margin=0.1):
     if robot_pose_stamped is None or goal_pose_stamped is None:
         return False
-    if abs(goal_pose_stamped.pose.position.x - robot_pose_stamped.pose.position.x) < margin and abs(goal_pose_stamped.pose.position.y - robot_pose_stamped.pose.position.y) < margin:
+    if (
+        abs(goal_pose_stamped.pose.position.x - robot_pose_stamped.pose.position.x)
+        < margin
+        and abs(goal_pose_stamped.pose.position.y - robot_pose_stamped.pose.position.y)
+        < margin
+    ):
         return True
     return False
+
 
 class State:
     def __init__(self, robot):
         self.robot = robot
+
     def init(self, args=None):
         pass
+
     def execute(self):
         pass
+
     def terminate(self):
         pass
+
     def _get_goal_reached(self):
         return self.robot.goal_reached
+
 
 class Task1Tracking(State):
     def __init__(self, robot):
@@ -62,12 +74,16 @@ class Task1ToTask2(State):
             rospy.loginfo("Goal Reached")
             if self.curr_phase == 0:
                 self.curr_phase = 1
-                self.goal_pose = self.robot.get_goal_pose_from_config_map("/task1_complete_2")
+                self.goal_pose = self.robot.get_goal_pose_from_config_map(
+                    "/task1_complete_2"
+                )
                 self.robot.pub_goal.publish(self.goal_pose)
                 self.robot.goal_reached = False
             elif self.curr_phase == 1:
                 self.curr_phase = 2
-                self.goal_pose = self.robot.get_goal_pose_from_config_map("/task1_crossing_1")
+                self.goal_pose = self.robot.get_goal_pose_from_config_map(
+                    "/task1_crossing_1"
+                )
                 self.robot.pub_goal.publish(self.goal_pose)
                 self.robot.goal_reached = False
             elif self.curr_phase == 2:
@@ -79,7 +95,8 @@ class Task1ToTask2(State):
         #         self.goal_pose = self.robot.get_goal_pose_from_config_map("/task1_crossing_1")
         #         self.robot.pub_goal.publish(self.goal_pose)
         pass
-        
+
+
 class Task2Entry(State):
     def init(self, args):
         if args:
@@ -96,21 +113,37 @@ class Task2Entry(State):
             rospy.loginfo("Goal Reached")
             self.robot.set_state(self.robot.idle_state)
         pass
-    
+
 
 class Task2State(State):
     def __init__(self, robot):
         super().__init__(robot)
         self.process = None
         self.curr_phase = 0
-
+        self.client = dynamic_reconfigure.client.Client(
+            "/move_base/global_costmap", timeout=5, config_callback=self.config_cb
+        )
+        
     def init(self, arg):
         self.robot.pub_explore.publish(True)
         self.robot.pub_percep_cmd.publish("number")
         self.robot.percept_wait = "number"
         self.robot.number_pose = None
         self.curr_phase = 0
+        self.client.update_configuration(
+            {
+                "footprint": [
+                    [-0.1, -0.1],
+                    [-0.1, 0.1],
+                    [0.1, 0.1],
+                    [0.1, -0.1],
+                ]
+            }
+        )
 
+
+    def config_cb(self, config):
+        rospy.loginfo("Config Callback")
 
     def execute(self):
         if self.curr_phase == 0:
@@ -126,13 +159,22 @@ class Task2State(State):
 
                 self.robot.pub_goal.publish(self.robot.number_pose)
                 self.robot.number_pose = None
-            
+
         elif self.curr_phase == 1:
             pass
 
     def terminate(self):
         self.robot.percept_wait = ""
         self.robot.pub_explore.publish(False)
+        self.client.update_configuration(
+            {
+                "footprint": [
+                   [[-0.21, -0.165], [-0.21, 0.165], [0.21, 0.165], [0.21, -0.165]]
+
+                ]
+            }
+        )
+
 
 class Task3Tracking(State):
     def init(self, goal_pose):
@@ -140,6 +182,7 @@ class Task3Tracking(State):
 
     def execute(self):
         pass
+
 
 class IdleState(State):
     def init(self, args=None):

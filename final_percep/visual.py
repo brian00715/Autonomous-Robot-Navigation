@@ -72,7 +72,7 @@ class Visual:
             for detection in result:
                 if len(detection[1]) > 1:
                     continue
-                if detection[2] < 0.99:
+                if detection[2] < 0.98:
                     continue
                 if detection[1] < '1' or detection[1] > '9':
                     continue
@@ -118,12 +118,12 @@ class Visual:
                 point_p.pose.position.z = 0
                 point_p.pose.orientation.w = 1
 
-                try:
-                    (trans,rot) = self.listener.lookupTransform('/map', '/tim551', rospy.Time(0))
-                except Exception as e:
-                    #print(e)
-                    self.is_processing = False
-                    return
+                # try:
+                #     (trans,rot) = self.listener.lookupTransform('/map', '/tim551', rospy.Time(0))
+                # except Exception as e:
+                #     #print(e)
+                #     self.is_processing = False
+                #     return
                 #print(trans," ",rot)
                 transformed_p = self.listener.transformPose('map', point_p)   
                 x = transformed_p.pose.position.x
@@ -155,8 +155,9 @@ class Visual:
                     goal_p.pose.position.z = 0
                     goal_p.pose.orientation.w = 1
                     self.pubpose.publish(goal_p)
-                    print(self.numberposelists)
+                    
                     print(goal_x, goal_y)
+                print(self.numberposelists)
                     # transformed_goal = self.listener.transformPose('map', goal_p)
                     # self.pubpose.publish(transformed_goal)
 
