@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<launch>
+
+    <include file="$(find me5413_world)/launch/world.launch" />
+
+    <!-- <include file="$(find final_pnc)/launch/navigation.launch">
+        <arg name="localization" value="gt" />
+    </include> -->
+
+    <include file="$(find final_slam)/launch/localization_carto.launch" />
+
+    <node pkg="map_server" type="map_server" name="map_server"
+        args="$(find final_slam)/maps/final_map_2d.yaml" output="screen" />
+    <include file="$(find final_slam)/launch/amcl.launch" />
+
+
+</launch>

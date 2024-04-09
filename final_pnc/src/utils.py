@@ -21,7 +21,7 @@ def quat2yaw(q: geometry_msgs.Quaternion) -> float:
     return tft.euler_from_quaternion([q.x, q.y, q.z, q.w])[2]
 
 
-def linear_interpolate_pose(pose1, pose2, t):
+def lin_interp_pose(pose1, pose2, t):
     """
     Linearly interpolates between two poses.
 
@@ -90,7 +90,7 @@ def path_lin_interpo_cut(path: nav_msgs.Path, T, N, V):
 
         if distances:
             t = target_distance / distances[0]
-            new_pose = linear_interpolate_pose(poses[0], poses[1], t)
+            new_pose = lin_interp_pose(poses[0], poses[1], t)
             new_path.poses.append(new_pose)
             target_distance += step_distance
         else:
@@ -214,6 +214,19 @@ def pose2ndarray_se2(pose: geometry_msgs.Pose) -> np.ndarray:
     )
     ar[2] = euler[2]
     return ar
+
+
+def ndarray2pose_stamp_se2(ar: np.ndarray) -> geometry_msgs.PoseStamped:
+    pose = geometry_msgs.PoseStamped()
+    pose.pose.position.x = ar[0]
+    pose.pose.position.y = ar[1]
+    pose.pose.position.z = 0
+    q = tft.quaternion_from_euler(0, 0, ar[2])
+    pose.pose.orientation.x = q[0]
+    pose.pose.orientation.y = q[1]
+    pose.pose.orientation.z = q[2]
+    pose.pose.orientation.w = q[3]
+    return pose
 
 
 def get_acute_angle(ang1, ang2):

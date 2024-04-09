@@ -1,0 +1,12 @@
+<launch>
+    <include file="$(find me5413_world)/launch/world.launch" />
+
+    <include file="$(find final_pnc)/launch/navigation.launch">
+        <arg name="localization" value="gt" />
+    </include>
+
+    <!-- <node pkg="$(find final_pnc)" type="pub_goal.py" name="pub_goal"
+        launch-prefix="bash -c 'sleep 3.0; $0 $@';">
+        <param name="target" value="vehicle_2" />
+    </node> -->
+</launch>
