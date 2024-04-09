@@ -12,6 +12,12 @@ import tf
 import tf.transformations as tft
 import numpy as np
 
+class NavStatus(enumerate):
+    """Navigation status enumeration."""
+    IDLE = 0
+    EXECUTING = 1
+    FAILED = 2
+    ARRIVED = 3
 
 def euclidian_dist_se2(p1: geometry_msgs.Pose, p2: geometry_msgs.Pose) -> float:
     return ((p1.position.x - p2.position.x) ** 2 + (p1.position.y - p2.position.y) ** 2) ** 0.5

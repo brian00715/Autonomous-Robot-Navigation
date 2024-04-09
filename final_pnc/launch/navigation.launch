@@ -1,7 +1,7 @@
 <launch>
 
   <arg name="enable_teleop" default="false" />
-  <arg name="localization" default="carto" doc="amcl,gt,carto" />
+  <arg name="localization" default="amcl" doc="amcl,gt,carto" />
 
   <group if="$(arg enable_teleop)">
     <node name="teleop_twist_keyboard" pkg="teleop_twist_keyboard" type="teleop_twist_keyboard.py"
