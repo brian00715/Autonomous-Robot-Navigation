@@ -17,7 +17,7 @@
   <include file="$(find final_slam)/launch/localization_carto.launch" />
 
   <!-- Launch Perception -->
-  <!-- <include file="$(find final_percep)/launch/final_percep.launch" /> -->
+  <include file="$(find final_percep)/launch/final_percep.launch" />
 
   <!-- Launch the mapper -->
   <include file="$(find occ_grid_mapping)/launch/mapping.launch" />

@@ -80,7 +80,7 @@ class NMPCNode:
         self.freq = param_dict["freq"]
         self.local_window_size = param_dict["local_window_size"]
 
-        self.yaw_pid = PIDController(kp=2, ki=0, kd=0.1)
+        self.yaw_pid = PIDController(kp=0.5, ki=0, kd=0.1)
 
         if self.method == "mpc":
             self.N = param_dict["N"]
@@ -146,7 +146,7 @@ class NMPCNode:
     def set_speed_callback(self, msg: Twist):
         self.vel_ref = msg.linear.x
         self.controller.set_param("max_vel", self.vel_ref)
-        rospy.loginfo(f"New reference vel:{self.vel_ref} received!")
+        # rospy.loginfo(f"New reference vel:{self.vel_ref} received!")
 
     def goal_pose_callback(self, msg: PoseStamped):
         if self.curr_odom is None:

@@ -128,16 +128,16 @@ class Task2State(State):
         self.robot.number_pose = None
         self.curr_phase = 0
         self.robot.goal_reached = False
-        self.client.update_configuration(
-            {
-                "footprint": [
-                    [-0.1, -0.1],
-                    [-0.1, 0.1],
-                    [0.1, 0.1],
-                    [0.1, -0.1],
-                ]
-            }
-        )
+        # self.client.update_configuration(
+        #     {
+        #         "footprint": [
+        #             [-0.1, -0.1],
+        #             [-0.1, 0.1],
+        #             [0.1, 0.1],
+        #             [0.1, -0.1],
+        #         ]
+        #     }
+        # )
 
 
     def config_cb(self, config):
@@ -167,14 +167,14 @@ class Task2State(State):
     def terminate(self):
         self.robot.percept_wait = ""
         self.robot.pub_explore.publish(False)
-        self.client.update_configuration(
-            {
-                "footprint": [
-                   [[-0.21, -0.165], [-0.21, 0.165], [0.21, 0.165], [0.21, -0.165]]
+        # self.client.update_configuration(
+        #     {
+        #         "footprint": [
+        #            [[-0.21, -0.165], [-0.21, 0.165], [0.21, 0.165], [0.21, -0.165]]
 
-                ]
-            }
-        )
+        #         ]
+        #     }
+        # )
 
 
 class Task3Tracking(State):
