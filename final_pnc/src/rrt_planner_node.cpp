@@ -1,6 +1,6 @@
-#include "rrt_planner/rrt_planner.h"
+#include <final_pnc/rrt_planner.h>
 
-int main(int argv, char ** argc)
+int main(int argv, char **argc)
 {
   ros::init(argv, argc, "rrt_planner");
   ros::NodeHandle node;
