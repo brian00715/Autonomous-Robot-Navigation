@@ -36,9 +36,10 @@
     <remap from="/scan" to="/front/scan" />
     <remap from="/odom" to="/gazebo/ground_truth/state" />
     <!-- <remap from="/odom" to="/odometry/filtered" /> -->
+    <!-- <remap from="odom" to="odometry/gps/fix" /> -->
     <!-- <remap from="/odom" to="/jackal_velocity_controller/odom" /> -->
-    <remap from="/imu" to="/imu/data" />
-    <remap from="/fix" to="/navsat/fix" />
+    <remap from="imu" to="imu/data" />
+    <remap from="fix" to="navsat/fix" />
   </node>
 
   <node name="cartographer_occupancy_grid_node" pkg="cartographer_ros"

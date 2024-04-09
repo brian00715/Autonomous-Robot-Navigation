@@ -1,7 +1,7 @@
 <launch>
 
   <arg name="enable_teleop" default="false" />
-  <arg name="localization" default="amcl" doc="amcl,gt,carto" />
+  <arg name="localization" default="gt" doc="amcl,gt,carto,ekf" />
 
   <group if="$(arg enable_teleop)">
     <node name="teleop_twist_keyboard" pkg="teleop_twist_keyboard" type="teleop_twist_keyboard.py"
@@ -23,11 +23,25 @@
       args="0 0 0 0 0 0 map odom" />
     <node pkg="final_slam" type="get_gt_odom.py" name="get_gt_odom" output="screen" />
   </group>
+  <group if="$(eval localization == 'ekf')">
+    <node pkg="robot_localization" type="navsat_transform_node" name="navsat_transform_node"
+      respawn="true">
+      <!-- <param name="frequency" value="40" /> -->
+      <param name="broadcast_utm_transform" value="false" />
+      <param name="use_odometry_yaw" value="true" />
+      <param name="wait_for_datum" value="false" />
+      <param name="yaw_offset" value="0" />
+      <remap from="gps/fix" to="navsat/fix" />
+      <remap from="/imu/data" to="/imu/data" />
+    </node>
+    <node pkg="final_slam" type="fix_gps_odom.py" name="fix_gps_odom" output="screen" />
+    <node pkg="tf2_ros" type="static_transform_publisher" name="map2odom"
+      args="0 0 0 0 0 0 map odom" />
+  </group>
 
   <!-- Launch Move Base -->
   <include file="$(find final_pnc)/launch/move_base.launch" />
 
-  <!-- <node type="rrt_planner_node" name="rrt_planner" pkg="final_pnc" output="screen"/> -->
 
   <!-- Launch Rviz with our settings -->
   <node type="rviz" name="rviz" pkg="rviz" args="-d $(find final_pnc)/config/navigation.rviz"

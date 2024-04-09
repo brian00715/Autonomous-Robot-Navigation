@@ -3,6 +3,7 @@
 import rospy
 from geometry_msgs.msg import PoseStamped
 from nav_msgs.msg import Odometry
+import tf
 
 class Odom2Pose:
     def __init__(self, pose_stamped_topic, odometry_topic):
@@ -19,5 +20,5 @@ if __name__ == '__main__':
     rospy.init_node('odom2pose', anonymous=True)
     pose_stamped_topic = '/tracked_pose' 
     odometry_topic = '/final_slam/odom'
-    repackage_node = Odom2Pose(pose_stamped_topic, odometry_topic)
+    repackage_node1= Odom2Pose(pose_stamped_topic, odometry_topic)
     rospy.spin()

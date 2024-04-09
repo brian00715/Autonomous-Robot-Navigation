@@ -7,7 +7,7 @@
  # @ Description:
  """
 
-
+import time
 import math
 import os
 import sys
@@ -23,7 +23,7 @@ from geometry_msgs.msg import Pose, PoseArray, PoseStamped, Twist
 from nav_msgs.msg import Odometry, Path
 from nav_msgs.srv import GetPlan
 from nmpc_controller import NMPCC
-from std_msgs.msg import Bool, Int8
+from std_msgs.msg import Bool, Int8, Float32
 from utils import (
     euclidian_dist_se2,
     find_nearest_point,
@@ -128,6 +128,7 @@ class NMPCNode:
         self.pred_pose_pub = rospy.Publisher("/final_pnc/mpc/pred_pose", PoseArray, queue_size=1)
         self.interpo_ref_path_pub = rospy.Publisher("/final_pnc/mpc/interpo_ref_path", Path, queue_size=1)
         self.local_path_pub = rospy.Publisher("/final_pnc/mpc/local_path", Path, queue_size=1)
+        self.global_path_plan_time_pub = rospy.Publisher("/final_pnc/mpc/global_path_plan_time", Float32, queue_size=1)
         self.win_interp_point_pub = rospy.Publisher("/final_pnc/mpc/win_interp_point", PoseStamped, queue_size=1)
         # subs
         self.odom_sub = rospy.Subscriber(self.odom_topic, Odometry, self.robot_odom_callback)
@@ -164,6 +165,7 @@ class NMPCNode:
         curr_pose.header = self.curr_odom.header
         curr_pose.header.frame_id = "map"
         curr_pose.pose = self.curr_odom.pose.pose
+        st = time.time()
         try:
             self.global_path = self.get_plan_srv.call(curr_pose, msg, 0).plan
         except rospy.ServiceException as e:
@@ -174,6 +176,8 @@ class NMPCNode:
             rospy.logerr("Global path planning failed!")
             self.pub_error()
             return
+        duration = time.time() - st
+        self.global_path_plan_time_pub.publish(duration)
         self.global_path = path_lin_interpo(self.global_path, 0.2)
         rospy.loginfo(f"New goal {(msg.pose.position.x,msg.pose.position.y,quat2yaw(msg.pose.orientation))} received!")
         self.rot2start_yaw = True
