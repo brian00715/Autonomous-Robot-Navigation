@@ -138,13 +138,19 @@ class NMPCNode:
         self.status_pub = rospy.Publisher("/final_pnc/status", Int8, queue_size=1)
         self.set_vel_sub = rospy.Subscriber("/final_pnc/set_ref_vel", Twist, self.set_speed_callback)
         # srvs
-        if rospy.wait_for_service(self.make_plan_topic, timeout=5):
-            rospy.loginfo(f"Service {self.make_plan_topic} is available")
-        if rospy.wait_for_service(self.make_plan_local_topic, timeout=5):
-            rospy.loginfo(f"Service {self.make_plan_local_topic} is available")
+        try:
+            rospy.wait_for_service(self.make_plan_topic, timeout=5)
+        except rospy.ROSException:
+            rospy.logerr(f"Service {self.make_plan_topic} is not available")
+        try:
+            rospy.wait_for_service(self.make_plan_local_topic, timeout=5)
+        except rospy.ROSException:
+            rospy.logerr(f"Service {self.make_plan_local_topic} is not available")
         self.get_plan_srv = rospy.ServiceProxy(self.make_plan_topic, GetPlan)
         self.get_plan_local_srv = rospy.ServiceProxy(self.make_plan_local_topic, GetPlan)
         # self.dyn_client = DynServer(path_publisherConfig, self.dyn_callback)
+
+        rospy.loginfo("Path tracker node initialized")
 
     def set_speed_callback(self, msg: Twist):
         self.vel_ref = msg.linear.x
@@ -379,6 +385,7 @@ class NMPCNode:
                         self.rot2start_yaw = False
                         self.rot2goal_yaw = False
                         continue
+                    cmd_vel = Twist()
                     cmd_vel.linear.x = 0
                     cmd_vel.angular.z = self.yaw_pid.get_output(self.curr_pose[2], ref_yaw, 1 / self.freq)
                 elif self.rot2goal_yaw:
@@ -398,7 +405,7 @@ class NMPCNode:
                         self.rot2goal_yaw = False
                         self.enable_ctrl = False
                         continue
-
+                    cmd_vel = Twist()
                     cmd_vel.linear.x = 0
                     cmd_vel.angular.z = self.yaw_pid.get_output(self.curr_pose[2], ref_yaw, 1 / self.freq)
                 else:
@@ -412,7 +419,7 @@ class NMPCNode:
                 status = Int8()
                 status.data = NavStatus.IDLE
                 self.status_pub.publish(status)
-            self.pub_cmd_vel.publish(cmd_vel)
+            # self.pub_cmd_vel.publish(cmd_vel)
             rate.sleep()
 
 

@@ -42,7 +42,9 @@ sample_based = [
     "rrt_star_connect",
 ]
 
-mid_point = [13, 3.25, 0]  # x,t,theta
+mid_point = [8, 3.25, 0]  # x,t,theta
+
+send_mid_goal = True
 
 
 class Evaluator:
@@ -55,6 +57,9 @@ class Evaluator:
         self.goal_pose.header.stamp = rospy.Time.now()
         self.param_dict = param_dict
         self.sample_rate = sample_rate  # hz
+        self.mid_goal = ndarray2pose_stamp_se2(mid_point)
+        self.mid_goal.header.frame_id = "map"
+        self.mid_goal.header.stamp = rospy.Time.now()
 
         # states
         self.reach = False
@@ -64,6 +69,7 @@ class Evaluator:
         self.acc_ar = []
         self.global_cell_num = []
         self.global_plan_time = []
+        self.reach_mid_goal = False
 
         # ros related
         # pubs
@@ -90,6 +96,7 @@ class Evaluator:
 
     def reach_callback(self, msg: ReachGoal):
         self.reach = msg.result.data
+        rospy.loginfo(f"Reach goal: {self.reach}")
         pass
 
     def odom_callback(self, msg: Odometry):
@@ -103,18 +110,27 @@ class Evaluator:
         self.global_cell_num.append(count)
 
     def run(self):
+        rospy.sleep(0.5)
         rate = rospy.Rate(self.sample_rate)
-        for i in range(3):
+        if send_mid_goal:
+            self.goal_pub.publish(self.mid_goal)
+        else:
             self.goal_pub.publish(self.goal_pose)
-            rate.sleep()
         st = time.time()
         rospy.loginfo(
             f"Start evaluation with global planner: {self.global_planner}, local planner: {self.local_planner}"
         )
-        # while not rospy.is_shutdown():
-        #     self.goal_pub.publish(self.goal_pose)
-        #     rate.sleep()
         while not rospy.is_shutdown():
+            if self.curr_odom is None:
+                rate.sleep()
+                continue
+            if send_mid_goal:
+                if euclidian_dist_se2(self.curr_odom.pose.pose, self.mid_goal.pose) < 0.3 and not self.reach_mid_goal:
+                    self.reach_mid_goal = True
+                    for i in range(3):
+                        self.goal_pub.publish(self.goal_pose)
+                        rate.sleep()
+                    rospy.loginfo("Reach mid goal")
             if self.reach:
                 self.odom_sub.unregister()
                 self.imu_sub.unregister()
@@ -157,7 +173,7 @@ class Evaluator:
 
         date = time.strftime("%m-%d_%H-%M-%S", time.localtime())
         result_dir = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), f"../result/{self.global_planner}_{self.local_planner}_{date}"
+            os.path.dirname(os.path.abspath(__file__)), f"../results/{self.global_planner}_{self.local_planner}_{date}"
         )
         if not os.path.exists(result_dir):
             os.makedirs(result_dir)
@@ -166,7 +182,7 @@ class Evaluator:
             f.write(json.dumps(result_dict, indent=4))
 
         np.save(f"{result_dir}/acc_trans.npy", acc_trans)
-        np.save(f"{result_dir}/ac c_rot.npy", acc_rot)
+        np.save(f"{result_dir}/acc_rot.npy", acc_rot)
         np.save(f"{result_dir}/vel_trans.npy", vel_trans)
         np.save(f"{result_dir}/vel_rot.npy", vel_rot)
         rospy.loginfo("Evaluation finished")
@@ -174,15 +190,17 @@ class Evaluator:
 
 if __name__ == "__main__":
     rospy.init_node("eval_pnc")
-    global_planner = rospy.get_param("~global_planner", "theta_star")
-    local_planner = rospy.get_param("~local_planner", "mpc")
+    global_planner = rospy.get_param("~global_planner", "navfn")
+    local_planner = rospy.get_param("~local_planner", "teb")
 
     # expereiment settings, used to write log
     param_dict = {
         "global_planner": {},
         "local_planner": {
-            "max_vel_trans": 2,
+            "max_vel_trans": 1.5,
+            # "min_vel_trans": 0.2,
             "max_vel_theta": 2,
+            # "min_vel_theta": 0.2,
             "max_lin_acc": 15,
             "max_ang_acc": 10,
             "xy_tol": 0.2,
