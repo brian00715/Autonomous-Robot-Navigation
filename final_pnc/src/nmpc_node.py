@@ -7,7 +7,7 @@
  # @ Description:
  """
 
-
+import time
 import math
 import os
 import sys
@@ -23,7 +23,7 @@ from geometry_msgs.msg import Pose, PoseArray, PoseStamped, Twist
 from nav_msgs.msg import Odometry, Path
 from nav_msgs.srv import GetPlan
 from nmpc_controller import NMPCC
-from std_msgs.msg import Bool
+from std_msgs.msg import Bool, Int8, Float32
 from utils import (
     euclidian_dist_se2,
     find_nearest_point,
@@ -36,6 +36,7 @@ from utils import (
     reorder_path_points,
     find_point_from_idx_dist,
     path_lin_interpo,
+    NavStatus,
 )
 
 from final_pnc.msg import ReachGoal
@@ -127,26 +128,40 @@ class NMPCNode:
         self.pred_pose_pub = rospy.Publisher("/final_pnc/mpc/pred_pose", PoseArray, queue_size=1)
         self.interpo_ref_path_pub = rospy.Publisher("/final_pnc/mpc/interpo_ref_path", Path, queue_size=1)
         self.local_path_pub = rospy.Publisher("/final_pnc/mpc/local_path", Path, queue_size=1)
+        self.global_path_plan_time_pub = rospy.Publisher("/final_pnc/mpc/global_path_plan_time", Float32, queue_size=1)
         self.win_interp_point_pub = rospy.Publisher("/final_pnc/mpc/win_interp_point", PoseStamped, queue_size=1)
         # subs
         self.odom_sub = rospy.Subscriber(self.odom_topic, Odometry, self.robot_odom_callback)
         # self.ref_path_sub = rospy.Subscriber(self.ref_path_topic, Path, self.ref_path_callback)
         self.goal_pose_sub = rospy.Subscriber("/move_base_simple/goal", PoseStamped, self.goal_pose_callback)
         self.reach_pub = rospy.Publisher("/final_pnc/reach_goal", ReachGoal, queue_size=1)
+        self.status_pub = rospy.Publisher("/final_pnc/status", Int8, queue_size=1)
         self.set_vel_sub = rospy.Subscriber("/final_pnc/set_ref_vel", Twist, self.set_speed_callback)
         # srvs
-        if rospy.wait_for_service(self.make_plan_topic, timeout=5):
-            rospy.loginfo(f"Service {self.make_plan_topic} is available")
-        if rospy.wait_for_service(self.make_plan_local_topic, timeout=5):
-            rospy.loginfo(f"Service {self.make_plan_local_topic} is available")
+        try:
+            rospy.wait_for_service(self.make_plan_topic, timeout=5)
+        except rospy.ROSException:
+            rospy.logerr(f"Service {self.make_plan_topic} is not available")
+        try:
+            rospy.wait_for_service(self.make_plan_local_topic, timeout=5)
+        except rospy.ROSException:
+            rospy.logerr(f"Service {self.make_plan_local_topic} is not available")
         self.get_plan_srv = rospy.ServiceProxy(self.make_plan_topic, GetPlan)
         self.get_plan_local_srv = rospy.ServiceProxy(self.make_plan_local_topic, GetPlan)
         # self.dyn_client = DynServer(path_publisherConfig, self.dyn_callback)
+
+        rospy.loginfo("Path tracker node initialized")
 
     def set_speed_callback(self, msg: Twist):
         self.vel_ref = msg.linear.x
         self.controller.set_param("max_vel", self.vel_ref)
         # rospy.loginfo(f"New reference vel:{self.vel_ref} received!")
+
+    def pub_error(self):
+        status = Int8()
+        status.data = NavStatus.FAILED
+        self.status_pub.publish(status)
+        self.enable_ctrl = False
 
     def goal_pose_callback(self, msg: PoseStamped):
         if self.curr_odom is None:
@@ -156,11 +171,19 @@ class NMPCNode:
         curr_pose.header = self.curr_odom.header
         curr_pose.header.frame_id = "map"
         curr_pose.pose = self.curr_odom.pose.pose
-        self.global_path = self.get_plan_srv.call(curr_pose, msg, 0).plan
-        if len(self.global_path.poses) == 0:
-            rospy.logerr("Empty global path")
-            self.enable_ctrl = False
+        st = time.time()
+        try:
+            self.global_path = self.get_plan_srv.call(curr_pose, msg, 0).plan
+        except rospy.ServiceException as e:
+            rospy.logerr("Service call failed: %s", e)
+            self.pub_error()
             return
+        if len(self.global_path.poses) == 0 or self.global_path is None:
+            rospy.logerr("Global path planning failed!")
+            self.pub_error()
+            return
+        duration = time.time() - st
+        self.global_path_plan_time_pub.publish(duration)
         self.global_path = path_lin_interpo(self.global_path, 0.2)
         rospy.loginfo(f"New goal {(msg.pose.position.x,msg.pose.position.y,quat2yaw(msg.pose.orientation))} received!")
         self.rot2start_yaw = True
@@ -303,9 +326,12 @@ class NMPCNode:
         while not rospy.is_shutdown():
 
             if self.curr_odom is not None and self.enable_ctrl:
+                status = Int8()
+                status.data = NavStatus.EXECUTING
+                self.status_pub.publish(status)
 
                 if self.is_xy_reached():
-                    rospy.loginfo_throttle(1, "Goal reached!")
+                    rospy.loginfo_throttle(1, "XY reached!")
                     cmd_vel = Twist()
                     self.pub_cmd_vel.publish(cmd_vel)  # stop immediately
                     self.rot2start_yaw = False
@@ -314,7 +340,7 @@ class NMPCNode:
                 idx_odom_in_path = find_nearest_point(self.global_path, self.curr_pose)
                 if 0:
                     if idx_odom_in_path is None:
-                        rospy.logwarn("can't find nearest point")
+                        rospy.logwarn_throttle(1, "can't find nearest point")
                         continue
                     self.ref_path = Path()
                     self.ref_path.header = self.global_path.header
@@ -324,7 +350,7 @@ class NMPCNode:
                         self.global_path, idx_odom_in_path, self.local_window_size
                     )
                     if win_inter_point is None:
-                        rospy.logwarn("can't find nearest point")
+                        rospy.logwarn_throttle(1, "can't find nearest point")
                         continue
                     self.win_interp_point_pub.publish(win_inter_point)
                     curr_pose_stam = PoseStamped()
@@ -356,6 +382,7 @@ class NMPCNode:
                         self.rot2start_yaw = False
                         self.rot2goal_yaw = False
                         continue
+                    cmd_vel = Twist()
                     cmd_vel.linear.x = 0
                     cmd_vel.angular.z = self.yaw_pid.get_output(self.curr_pose[2], ref_yaw, 1 / self.freq)
                 elif self.rot2goal_yaw:
@@ -364,15 +391,18 @@ class NMPCNode:
                     ref_yaw = get_acute_angle(self.curr_pose[2], ref_yaw)
                     # rospy.loginfo(f"Rotating: {self.curr_pose[2]:.2f} -> {ref_yaw:.2f}")
                     if abs(ref_yaw - self.curr_pose[2]) < self.ang_tol:  # really reached the goal
-                        self.rot2goal_yaw = False
                         msg = ReachGoal()
                         msg.result.data = True
                         msg.goal = self.goal_pose
                         self.reach_pub.publish(msg)
+                        msg = Int8()
+                        msg.data = NavStatus.ARRIVED
+                        self.status_pub.publish(msg)
                         rospy.loginfo("Goal reached!")
+                        self.rot2goal_yaw = False
                         self.enable_ctrl = False
                         continue
-
+                    cmd_vel = Twist()
                     cmd_vel.linear.x = 0
                     cmd_vel.angular.z = self.yaw_pid.get_output(self.curr_pose[2], ref_yaw, 1 / self.freq)
                 else:
@@ -383,8 +413,10 @@ class NMPCNode:
                         cmd_vel = self.compute_cmd_vel_lqr()
             else:
                 cmd_vel = Twist()
-
-            self.pub_cmd_vel.publish(cmd_vel)
+                status = Int8()
+                status.data = NavStatus.IDLE
+                self.status_pub.publish(status)
+            # self.pub_cmd_vel.publish(cmd_vel)
             rate.sleep()
 
 

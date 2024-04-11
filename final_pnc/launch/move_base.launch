@@ -1,6 +1,7 @@
 <launch>
 
   <arg name="local_planner" value="mpc" doc="base, dwa, teb, mpc" />
+  <arg name="use_move_base_local" default="true" />
 
   <node pkg="move_base" type="move_base" respawn="true" name="move_base" output="screen">
 
@@ -63,7 +64,8 @@
 
 
   <group if="$(eval local_planner == 'mpc')">
-    <node pkg="final_pnc" type="nmpc_node.py" name="nmpc_node" output="screen" respawn="true">
+    <node pkg="final_pnc" type="nmpc_node.py" name="nmpc_node" output="screen" respawn="true"
+      launch-prefix="bash -c 'sleep 3.0; $0 $@';">
     </node>
   </group>
 

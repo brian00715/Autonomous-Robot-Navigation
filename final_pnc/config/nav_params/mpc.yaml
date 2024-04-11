@@ -1,5 +1,7 @@
-odom_topic: "/final_slam/odom"
-# odom_topic: "/gazebo/ground_truth/state"
+# odom_topic: "/odometry/gps/fix"
+# odom_topic: "/final_slam/odom"
+odom_topic: "/gazebo/ground_truth/state"
+# odom_topic: "/integrated_to_init"
 
 ref_path_topic: "/move_base/TrajectoryPlannerROS/global_plan"
 
@@ -19,7 +21,7 @@ T: 0.05 # forward time step
 N: 20 # number of prediction steps
 vel_ref: 2 # 2 reference velocity, used both for trajecgory interpolation and mpc solving
 max_vel: 2 # 2
-max_omega: 1.8 # 2
+max_omega: 2 # 2
 max_lin_acc: 15 # 20
 max_ang_acc: 10 # 25
 Q: [5, 5, 0] # weights for x, y, theta, respectively

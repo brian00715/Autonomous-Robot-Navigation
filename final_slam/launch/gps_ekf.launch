@@ -1,0 +1,10 @@
+<launch>
+
+    <!-- Navsat -->
+    <node pkg="robot_localization" type="navsat_transform_node" name="navsat" respawn="true">
+        <remap from="imu/data" to="/imu/data" />
+        <remap from="gps/fix" to="/navsat/fix" />
+        <!-- <remap from="odometry/filtered" to="odometry/navsat" /> -->
+    </node>
+
+</launch>
