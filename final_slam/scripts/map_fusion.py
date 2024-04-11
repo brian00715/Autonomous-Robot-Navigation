@@ -40,7 +40,7 @@ map2 = cv2.copyMakeBorder(map2, border_size, border_size, border_size, border_si
 
 
 # Map Fusion
-map1 = cv2.resize(map1, (map2.shape[1], map2.shape[0]))
+map2 = cv2.resize(map2, (map1.shape[1], map1.shape[0]))
 alpha = 0.5  # Blend weight, adjustable
 fusion_map = cv2.addWeighted(map1, alpha, map2, 1-alpha, 0)
 _, fusion_map = cv2.threshold(fusion_map, 200, 255, cv2.THRESH_BINARY)
