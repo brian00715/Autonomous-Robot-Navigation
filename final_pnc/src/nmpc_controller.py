@@ -171,9 +171,9 @@ class NMPCC:
 
         ## input limits
         # self.opti.subject_to(self.opti.bounded(-self.ca_params["max_vel"], v, self.ca_params["max_vel"]))
-        self.opti.subject_to(self.opti.bounded(-0.1, v, self.ca_params["max_vel"]))
+        self.opti.subject_to(self.opti.bounded(-0.2, v, self.ca_params["max_vel"]))
         self.opti.subject_to(self.opti.bounded(-self.ca_params["max_omega"], omega, self.ca_params["max_omega"]))
-        self.opti.subject_to(v**2 + omega**2 <= 5**2)
+        # self.opti.subject_to(v**2 + omega**2 <= 6**2)
 
         if solver_params is not None:
             opts_setting = solver_params

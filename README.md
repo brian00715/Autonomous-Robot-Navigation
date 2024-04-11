@@ -7,6 +7,7 @@
 ├── final_pnc # Navigation package
 ├── final_percep # Perception package
 ├── final_slam # SLAM package
+├── final_fsm # Finite State Machine package
 ├── interactive_tools
 ├── jackal_description
 └── me5413_world
@@ -15,29 +16,31 @@
 Please create a new workspace '`ME5413_final_ws`' and clone this repo
 
 ```shell
-cd ~
-mkdir ME5413_final_ws
-cd ME5413_final_ws
-mkdir src
-cd src
+mkdir -p ~/ME5413_final_ws/src
+cd ~/ME5413_final_ws/src
 git clone https://github.com/brian00715/ME5413_Final_Project
 ```
-
-FIXME: Remember to highlight that a new workspace is required.
 
 # Installation guide
 
 ```shell
-sudo apt install ros-noetic-rviz-imu-plugin
-sudo apt install ros-noetic-dwa-local-planner
+sudo apt install ros-noetic-rviz-imu-plugin ros-noetic-move-base
 ```
 
 Python dependencies
 
 ```shell
-pip install easyocr
-pip install --upgrade Pillow
-pip install markupsafe==1.1.1 ipdb
+python -m pip install easyocr Pillow markupsafe==1.1.1 ipdb
+```
+
+## Perception using conda
+
+```shell
+conda create -n me5413 python=3.8
+conda activate me5413
+conda install pytorch==2.1.1 torchvision==0.16.1 pytorch-cuda=12.1 -c pytorch -c nvidia
+conda install -c conda-forge opencv rosdep rospkg easyocr decorator pexpect numpy defusedxml ipdb
+export PYTHONPATH=$PYTHONPATH:/usr/lib/python3.8/dist-packages
 ```
 
 # Running
@@ -50,14 +53,16 @@ roslaunch final_slam mapping_carto.launch
 ```
 
 - navigation(with finate state machine)
-```shell
+
+````shell
 roslaunch me5413_world world.launch
 roslaunch final_fsm fsm.launch
 - localization
 
+- localization
 ```shell
 roslaunch final_slam localization_carto.launch
-```
+````
 
 - navigation
 
@@ -70,7 +75,6 @@ roslaunch final_pnc navigation.launch
 ## `nmpc_node`
 
 ### Subscribed Topics
-
 
 ### Published Topics
 

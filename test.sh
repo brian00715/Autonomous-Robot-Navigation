@@ -1,0 +1,1 @@
+python tools/infer.py ~/Pictures/digits.png --rec SVTR --show --print-result

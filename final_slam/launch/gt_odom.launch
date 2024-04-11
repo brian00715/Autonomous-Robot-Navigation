@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<launch>
+
+    <node pkg="final_slam" type="get_gt_odom.py" name="get_gt_odom" output="screen" respawn="true">
+    </node>
+    <node pkg="tf" type="static_transform_publisher" name="map2odom"
+        args="0 0 0 0 0 0 map odom 10" output="screen" />
+
+</launch>

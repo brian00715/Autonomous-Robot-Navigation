@@ -9,7 +9,7 @@ nav_msgs
 geometry_msgs
 roscpp
 message_generation
-# graph_planner
+graph_planner
 # global_planner
 )
 find_package(OpenCV REQUIRED)
@@ -69,3 +69,8 @@ target_link_libraries(rrt_planner_node
 #   ${OpenCV_LIBS}
 # )
 
+
+catkin_install_python(PROGRAMS
+  src/utils.py
+  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)

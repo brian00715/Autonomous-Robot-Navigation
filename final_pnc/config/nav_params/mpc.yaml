@@ -3,14 +3,15 @@ odom_topic: "/final_slam/odom"
 
 ref_path_topic: "/move_base/TrajectoryPlannerROS/global_plan"
 
-# make_plan_topic: "/move_base/NavfnROS/make_plan"
-make_plan_topic: "/move_base/make_plan"
-make_plan_local_topic: "/move_base_local/NavfnROS/make_plan"
+make_plan_topic: "/move_base/NavfnROS/make_plan"
+# make_plan_topic: "/move_base/make_plan"
+# make_plan_local_topic: "/move_base_local/NavfnROS/make_plan"
+make_plan_local_topic: "/move_base_local/move_base_local/NavfnROS/make_plan"
 # make_plan_local_topic: "/move_base_local/make_plan"
 
 freq: 50 # control frequency
-rot_th: 30 # degree. rotate in place if the yaw error is less than
-xy_tol: 0.5 # (m) circular region around the goal
+rot_th: 25 # degree. rotate in place if the yaw error is less than
+xy_tol: 0.1 # (m) circular region around the goal
 ang_tol: 360 # (degree) angle tolerance
 local_window_size: 3 # (m)
 

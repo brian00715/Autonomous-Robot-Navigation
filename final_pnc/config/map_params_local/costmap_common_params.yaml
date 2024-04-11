@@ -23,7 +23,7 @@ obstacles_layer:
     {
       # sensor_frame: front_laser,
       data_type: LaserScan,
-      topic: front/scan,
+      topic: /front/scan,
       marking: true,
       clearing: true,
       min_obstacle_height: -2.0,

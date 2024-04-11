@@ -56,6 +56,8 @@
   <build_depend>roscpp</build_depend>
   <exec_depend>message_runtime</exec_depend>
   <exec_depend>roscpp</exec_depend>
+  <build_depend>python-catkin-package</build_depend>
+<exec_depend>python-catkin-package</exec_depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>
