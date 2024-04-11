@@ -146,7 +146,7 @@ class NMPCNode:
         self.goal_pose_sub = rospy.Subscriber("/move_base_simple/goal", PoseStamped, self.goal_pose_callback)
         self.reach_pub = rospy.Publisher("/final_pnc/reach_goal", ReachGoal, queue_size=1)
         self.status_pub = rospy.Publisher("/final_pnc/status", Int8, queue_size=1)
-        self.set_vel_sub = rospy.Subscriber("/final_pnc/set_ref_vel", Twist, self.set_speed_callback)
+        self.set_vel_sub = rospy.Subscriber("/final_pnc/set_ref_vel", Twist, self.set_vel_callback)
         # srvs
         try:
             rospy.wait_for_service(self.make_plan_topic, timeout=5)
@@ -162,10 +162,11 @@ class NMPCNode:
 
         rospy.loginfo("Path tracker node initialized")
 
-    def set_speed_callback(self, msg: Twist):
+    def set_vel_callback(self, msg: Twist):
         self.vel_ref = msg.linear.x
+        self.max_vel = msg.linear.x
         self.controller.set_param("max_vel", self.vel_ref)
-        # rospy.loginfo_throttle(1, f"New reference vel:{self.vel_ref} received!")
+        rospy.loginfo_throttle(1, f"New reference vel:{self.vel_ref} received!")
 
     def pub_error(self):
         status = Int8()
@@ -232,10 +233,10 @@ class NMPCNode:
         with open(filename, "a") as file:
             file.write(tum_data)
 
-    def dyn_callback(self, config, level):
-        self.vel_ref = config["speed_target"]
-        rospy.loginfo("Reconfigure Request: speed_target={}".format(self.vel_ref))
-        return config
+    # def dyn_callback(self, config, level):
+    #     self.vel_ref = config["speed_target"]
+    #     rospy.loginfo("Reconfigure Request: speed_target={}".format(self.vel_ref))
+    #     return config
 
     def robot_odom_callback(self, msg: Odometry):
         self.curr_odom = msg
