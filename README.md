@@ -1,4 +1,4 @@
-# Project Introduction
+# ME5413 Final Project - Group 8
 
 ## Structure
 
@@ -13,27 +13,30 @@
 └── me5413_world
 ```
 
-Please create a new workspace '`ME5413_final_ws`' and clone this repo
+## Installation
 
 ```shell
-mkdir -p ~/ME5413_final_ws/src
-cd ~/ME5413_final_ws/src
-git clone https://github.com/brian00715/ME5413_Final_Project
-```
-
-# Installation guide
-
-```shell
-sudo apt install ros-noetic-rviz-imu-plugin ros-noetic-move-base
+sudo apt install ros-noetic-rviz-imu-plugin ros-noetic-move-base ros-noetic-navfn tmux python3-catkin-tools zsh
 ```
 
 Python dependencies
 
 ```shell
-python -m pip install easyocr Pillow markupsafe==1.1.1 ipdb
+python -m pip install Pillow markupsafe==1.1.1 ipdb
 ```
 
-## Perception using conda
+### Build
+```shell
+mkdir -p ~/ME5413_final_ws/src
+cd ~/ME5413_final_ws/
+git clone https://github.com/brian00715/ME5413_Final_Project src
+
+catkin config -DPYTHON_EXECUTABLE=/usr/bin/python3 -DCMAKE_BUILD_TYPE=Release
+
+catkin build cartographer* final_slam final_pnc final_percep final_fsm jackal* interactive_tools me5413_world 
+```
+
+### Perception using conda
 
 ```shell
 conda create -n me5413 python=3.8
@@ -43,7 +46,15 @@ conda install -c conda-forge opencv rosdep rospkg easyocr decorator pexpect nump
 export PYTHONPATH=$PYTHONPATH:/usr/lib/python3.8/dist-packages
 ```
 
-# Running
+## Running
+
+### One-click launch
+
+```shell
+rosrun final_fsm start.sh
+```
+
+### Step-by-step launch
 
 - mapping
 
@@ -52,17 +63,18 @@ roslaunch me5413_world world.launch
 roslaunch final_slam mapping_carto.launch
 ```
 
-- navigation(with finate state machine)
-
-````shell
-roslaunch me5413_world world.launch
-roslaunch final_fsm fsm.launch
 - localization
 
-- localization
 ```shell
 roslaunch final_slam localization_carto.launch
-````
+```
+
+- navigation(with finate state machine)
+
+```shell
+roslaunch me5413_world world.launch
+roslaunch final_fsm fsm.launch
+```
 
 - navigation
 
@@ -276,3 +288,4 @@ We are following:
 ## License
 
 The [ME5413_Final_Project](https://github.com/NUS-Advanced-Robotics-Centre/ME5413_Final_Project) is released under the [MIT License](https://github.com/NUS-Advanced-Robotics-Centre/ME5413_Final_Project/blob/main/LICENSE)
+````

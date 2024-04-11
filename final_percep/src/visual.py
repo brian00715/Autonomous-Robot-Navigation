@@ -114,8 +114,8 @@ class Visual:
                     # detection[0]: the bounding box of the detected text
                     # detection[1]: the detected text
                     # detection[2]: the confidence of the detected text
-                    # if len(detection[1]) > 1:  # not a single digit
-                    #     continue
+                    if len(detection[1]) > 1:  # not a single digit
+                        continue
                     diag_vec = np.array(detection[0][2]) - np.array(detection[0][0])
                     diag_len = np.linalg.norm(diag_vec)
                     if 1:
@@ -128,7 +128,7 @@ class Visual:
                         )
                         cv2.putText(
                             img_show,
-                            detection[1],
+                            detection[1] + f" {detection[2]:.2f}",
                             (int(detection[0][0][0]), int(detection[0][0][1])),
                             cv2.FONT_HERSHEY_SIMPLEX,
                             1,
@@ -149,10 +149,8 @@ class Visual:
                         cv2.imshow("img", img_show)
                         cv2.waitKey(1)
 
-                    if detection[2] < 0.98:
+                    if detection[2] < 0.99:
                         continue
-                    # if detection[1] < "1" or detection[1] > "9":
-                    #     continue
                     if (
                         diag_len < 50
                     ):  # prevent the case that  Recognizing 1 too early leads to incorrect distance estimation

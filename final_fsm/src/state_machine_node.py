@@ -3,15 +3,14 @@
 import sys
 
 import ipdb
-import roslaunch
 import rospy
+import tf
 import tf2_geometry_msgs
 import tf2_ros
 import tf_conversions
 from geometry_msgs.msg import Pose, PoseStamped, Twist
 from nav_msgs.msg import Odometry
-from states import (IdleState, Task1ToTask2, Task1Tracking, Task2Entry,
-                    Task2State, Task3Tracking)
+from states import IdleState, Task1ToTask2, Task1Tracking, Task2Entry, Task2State, Task3Tracking
 from std_msgs.msg import Bool, String
 
 from final_pnc.msg import ReachGoal
@@ -30,7 +29,7 @@ vel_waypoints = [
     [4.27, -6.48, 1.8],
     [5.59, -5.25, 2],
     [5.71, 0.4, 1.8],
-    [1, 3.39, 3],
+    [0.34, 3.46, 3],
     [12.2, 3.43, 1.8],
     [12.2, 3.43, 1.8],
 ]  # x,y,vel
@@ -66,11 +65,12 @@ class Robot:
 
         self.tf2_buffer = tf2_ros.Buffer()
         self.tf2_listener = tf2_ros.TransformListener(self.tf2_buffer)
+        # self.tf_listener = tf.TransformListener()
         self.pub_goal = rospy.Publisher("/move_base_simple/goal", PoseStamped, queue_size=1)
         self.sub_goal_reached = rospy.Subscriber("/final_pnc/reach_goal", ReachGoal, self.goal_reached_callback)
         # self.pub_goal_name = rospy.Publisher("/rviz_panel/goal_name", String, queue_size=1)
 
-        self.pub_vel = rospy.Publisher("/final_pnc/set_ref_vel", Twist, queue_size=1)
+        self.ref_vel_pub = rospy.Publisher("/final_pnc/set_ref_vel", Twist, queue_size=1)
         self.sub_robot_odom = rospy.Subscriber("/final_slam/odom", Odometry, self.robot_odom_callback)
         self.sub_goal_name = rospy.Subscriber("/rviz_panel/goal_name", String, self.goal_name_callback)
         self.sub_goal_pose = rospy.Subscriber("/move_base_simple/goal", PoseStamped, self.goal_pose_callback)
@@ -168,23 +168,29 @@ class Robot:
 
     def get_goal_pose_from_config_map(self, name):
         P_world_goal = self.get_goal_pose_from_config(name)
-
         self.pose_world_goal = P_world_goal.pose
+
         # Get the Transform from world to map from the tf_listener
         try:
             transform_map_world = self.tf2_buffer.lookup_transform(self.map_frame, self.world_frame, rospy.Time(0))
+            # self.tf_listener.waitForTransform(self.map_frame, self.world_frame, rospy.Time(0), rospy.Duration(1.0))
+            # transform_map_world = self.tf_listener.lookupTransform(self.map_frame, self.world_frame, rospy.Time(0))
         except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException) as ex:
             rospy.logwarn("Failed to lookup transform: %s", str(ex))
             return
 
         # Transform the goal pose to map frame
         P_map_goal = PoseStamped()
-        P_map_goal = tf2_geometry_msgs.do_transform_pose(P_world_goal, transform_map_world)
         P_map_goal.header.stamp = rospy.Time.now()
         P_map_goal.header.frame_id = self.map_frame
+        P_map_goal = tf2_geometry_msgs.do_transform_pose(P_world_goal, transform_map_world)
+        # self.tf_listener.waitForTransform(self.map_frame, self.world_frame, rospy.Time(0), rospy.Duration(1.0))
+        # P_map_goal = self.tf_listener.transformPose(self.map_frame, P_world_goal)
 
         # Transform the robot pose to map frame
         self.pose_map_robot = tf2_geometry_msgs.do_transform_pose(self.robot_odom, transform_map_world)
+        # self.tf_listener.waitForTransform(self.map_frame, self.world_frame, rospy.Time(0), rospy.Duration(1.0))
+        # self.pose_map_robot = self.tf_listener.transformPose(self.map_frame, self.robot_odom)
         return P_map_goal
 
     def get_goal_pose_from_config(self, name):
@@ -200,6 +206,8 @@ class Robot:
         q = tf_conversions.transformations.quaternion_from_euler(0, 0, yaw)
 
         P_world_goal = PoseStamped()
+        P_world_goal.header.stamp = rospy.Time.now()
+        P_world_goal.header.frame_id = self.world_frame
         P_world_goal.pose.position.x = x
         P_world_goal.pose.position.y = y
         P_world_goal.pose.orientation.x = q[0]
@@ -233,22 +241,23 @@ if __name__ == "__main__":
             robot.pub_percep_cmd.publish("idle")
 
         # publish the speed command
-        cmd_vel = Twist()
+        ref_vel = Twist()
         if robot.current_state == robot.task2_state:
-            cmd_vel.linear.x = 1.5
+            ref_vel.linear.x = 1.5
         elif robot.current_state == robot.task3_state:
-            cmd_vel.linear.x = 2.2
-        else:
+            ref_vel.linear.x = 2.2
+        elif robot.current_state != robot.idle_state:
             vel = vel_waypoints[vel_waypoint_idx][2]
             if robot.robot_odom is not None:
                 dist = euclidian_dist(pose2ndarray_se2(robot.robot_odom.pose), vel_waypoints[vel_waypoint_idx + 1])
-                if dist < 0.4:
+                if dist < 0.5:
                     vel_waypoint_idx += 1
                     if vel_waypoint_idx >= len(vel_waypoints) - 1:
                         vel_waypoint_idx = -1
-            rospy.loginfo_throttle(1, f"vel_waypoint_idx: {vel_waypoint_idx}, vel: {vel}")
-            cmd_vel.linear.x = vel
-
-        robot.pub_vel.publish(cmd_vel)
+            rospy.loginfo_throttle(2, f"vel_waypoint_idx: {vel_waypoint_idx}, vel: {vel}")
+            ref_vel.linear.x = vel
+        else:
+            ref_vel.linear.x = 2.0
+        robot.ref_vel_pub.publish(ref_vel)
 
         rate.sleep()

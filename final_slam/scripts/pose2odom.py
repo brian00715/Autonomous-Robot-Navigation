@@ -13,6 +13,7 @@ class Odom2Pose:
     def odom_2_pose_callback(self, pose_stamped_msg):
         odometry_msg = Odometry()
         odometry_msg.header = pose_stamped_msg.header
+        odometry_msg.child_frame_id = 'base_link'
         odometry_msg.pose.pose = pose_stamped_msg.pose
         self.odometry_pub.publish(odometry_msg)
 

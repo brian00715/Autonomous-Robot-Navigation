@@ -9,7 +9,7 @@
     <param name="costmap_updates_topic" value="/move_base/global_costmap/costmap_updates" /> -->
     <param name="visualize" value="true" />
     <!-- <param name="planner_frequency" value="1" /> -->
-    <param name="planner_frequency" value="0.5" />
+    <param name="planner_frequency" value="0.25" />
     <!-- <param name="progress_timeout" value="30.0" /> -->
     <param name="progress_timeout" value="10.0" />
     <param name="potential_scale" value="3.0" />

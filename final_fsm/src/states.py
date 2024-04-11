@@ -115,6 +115,7 @@ class Task2State(State):
         super().__init__(robot)
         self.process = None
         self.curr_phase = 0
+        self.sent_num_box_pose = False
         self.gcostmap_client = DynamicReconfigureClient("/move_base/global_costmap/", timeout=30)
 
     def init(self, arg):
@@ -133,15 +134,16 @@ class Task2State(State):
                 # self.robot.percept_wait = ""
 
                 # BUG: the task will be recognized as completed if the robot reaches the goal of expolre, not the real goal
-                if is_goal_reached(self.robot.number_pose, self.robot.robot_pose, 0.3) and self._get_goal_reached():
+                if is_goal_reached(self.robot.number_pose, self.robot.robot_pose, 0.3) or self._get_goal_reached():
                     rospy.loginfo("Task2State Goal Reached")
                     self.curr_phase = 1
                     self.robot.pub_percep_cmd.publish("idle")
                     self.robot.percept_wait = ""
-                    # self.robot.pub_goal.publish(self.robot.robot_pose)
-
                 self.robot.pub_goal.publish(self.robot.number_pose)
-                # self.robot.number_pose = None
+                # if not self.sent_num_box_pose:
+                #     self.robot.pub_goal.publish(self.robot.number_pose)
+                #     self.sent_num_box_pose = True
+                self.robot.number_pose = None
             # else:
             #     self.robot.pub_explore.publish(True)
 

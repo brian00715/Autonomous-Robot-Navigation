@@ -1,10 +1,6 @@
 <launch>
     <arg name="localization" default="carto" doc="amcl,gt,carto" />
 
-    <!-- Run the map server -->
-    <arg name="map_file" default="$(find final_slam)/maps/final_map_2d_processed.yaml" />
-    <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" />
-
     <group if="$(eval localization == 'amcl')">
         <include file="$(find final_slam)/launch/amcl.launch" />
     </group>

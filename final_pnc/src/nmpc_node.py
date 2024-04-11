@@ -38,8 +38,16 @@ from utils import (
     path_lin_interpo,
     NavStatus,
 )
-
+from enum import Enum
 from final_pnc.msg import ReachGoal
+
+
+class FSMState(Enum):
+    IDLE = 0
+    ROTATE_TO_START = 1
+    MOVE_TO_GOAL_PID = 2
+    ROTATE_TO_GOAL = 3
+    MPC_TRACKING = 4
 
 
 class PIDController:
@@ -68,6 +76,7 @@ class NMPCNode:
         self.method = method
 
         # Load parameters
+        self.map_frame = "map"
         config_path = os.path.join(sys.path[0], "../config/nav_params/mpc.yaml")
         param_dict = yaml.safe_load(open(config_path, "r"))
         self.ref_path_topic = param_dict["ref_path_topic"]
@@ -77,11 +86,13 @@ class NMPCNode:
         self.xy_tol = param_dict["xy_tol"]
         self.ang_tol = np.deg2rad(param_dict["ang_tol"])
         self.vel_ref = param_dict["vel_ref"]
+        self.max_vel = param_dict["max_vel"]
         self.rot_th = np.deg2rad(param_dict["rot_th"])
         self.freq = param_dict["freq"]
         self.local_window_size = param_dict["local_window_size"]
 
         self.yaw_pid = PIDController(kp=2, ki=0, kd=0.2)
+        self.pos_pid = PIDController(kp=1, ki=0, kd=0.1)
 
         if self.method == "mpc":
             self.N = param_dict["N"]
@@ -112,15 +123,14 @@ class NMPCNode:
             self.dt = 0.1
 
         # States variables
-        self.enable_ctrl = False
         self.curr_odom = Odometry()
         self.ref_path = None
         self.interpo_ref_path = None  # interpolated path from the original reference path given the MPC parameters
         self.curr_pose = None
         self.goal_pose = None
+        self.goal_pose_ar = None
         self.global_path = None
-        self.rot2start_yaw = False
-        self.rot2goal_yaw = False
+        self.fsm_state = FSMState.IDLE
 
         # ROS related
         # pubs
@@ -155,18 +165,19 @@ class NMPCNode:
     def set_speed_callback(self, msg: Twist):
         self.vel_ref = msg.linear.x
         self.controller.set_param("max_vel", self.vel_ref)
-        # rospy.loginfo(f"New reference vel:{self.vel_ref} received!")
+        # rospy.loginfo_throttle(1, f"New reference vel:{self.vel_ref} received!")
 
     def pub_error(self):
         status = Int8()
         status.data = NavStatus.FAILED
         self.status_pub.publish(status)
-        self.enable_ctrl = False
+        self.fsm_state = FSMState.IDLE
 
     def goal_pose_callback(self, msg: PoseStamped):
         if self.curr_odom is None:
             return
         self.goal_pose = msg
+        self.goal_pose_ar = pose2ndarray_se2(msg.pose)
         curr_pose = PoseStamped()
         curr_pose.header = self.curr_odom.header
         curr_pose.header.frame_id = "map"
@@ -186,12 +197,11 @@ class NMPCNode:
         self.global_path_plan_time_pub.publish(duration)
         self.global_path = path_lin_interpo(self.global_path, 0.2)
         rospy.loginfo(f"New goal {(msg.pose.position.x,msg.pose.position.y,quat2yaw(msg.pose.orientation))} received!")
-        self.rot2start_yaw = True
-        self.enable_ctrl = True
+        self.fsm_state = FSMState.ROTATE_TO_START
 
     def ref_path_callback(self, msg: Path):
         self.ref_path = msg
-        if self.enable_ctrl:
+        if self.fsm_state == FSMState.MPC_TRACKING:
             self.interpo_ref_path = path_lin_interpo_cut(msg, self.T, self.N + 1, self.vel_ref)
 
     def output_tum_format(self, odom, filename="trajectory.txt"):
@@ -228,9 +238,8 @@ class NMPCNode:
         return config
 
     def robot_odom_callback(self, msg: Odometry):
-        self.world_frame = msg.header.frame_id
-        self.robot_frame = msg.child_frame_id
         self.curr_odom = msg
+        self.curr_odom.header.frame_id = self.map_frame
         self.curr_pose = [
             self.curr_odom.pose.pose.position.x,
             self.curr_odom.pose.pose.position.y,
@@ -268,7 +277,7 @@ class NMPCNode:
         u = self.controller.solve(self.curr_pose, mpc_ref_path, [[self.vel_ref, 0]] * self.N)
         x_pred = self.controller.x_opti
         pose_array = PoseArray()
-        pose_array.header.frame_id = self.world_frame
+        pose_array.header.frame_id = self.map_frame
         for i in range(self.N + 1):
             pose = Pose()
             pose.position.x = x_pred[i][0]
@@ -317,106 +326,152 @@ class NMPCNode:
 
         return cmd_vel
 
-    def is_xy_reached(self):
+    def is_mpc_xy_reached(self):
         return euclidian_dist_se2(ndarray2pose_se2(self.curr_pose), self.goal_pose.pose) < self.xy_tol
+
+    def local_replan(self):
+        idx_odom_in_path = find_nearest_point(self.global_path, self.curr_pose)
+        if 0:
+            if idx_odom_in_path is None:
+                rospy.logwarn_throttle(1, "can't find nearest point")
+                return False
+            self.ref_path = Path()
+            self.ref_path.header = self.global_path.header
+            self.ref_path.poses = self.global_path.poses[idx_odom_in_path:]
+        if 1:
+            win_inter_point = find_point_from_idx_dist(self.global_path, idx_odom_in_path, self.local_window_size)
+            if win_inter_point is None:
+                rospy.logwarn_throttle(1, "can't find nearest point")
+                return False
+            self.win_interp_point_pub.publish(win_inter_point)
+            curr_pose_stam = PoseStamped()
+            curr_pose_stam.header = self.curr_odom.header
+            curr_pose_stam.header.frame_id = "map"
+            curr_pose_stam.pose = self.curr_odom.pose.pose
+            local_path = self.get_plan_local_srv.call(curr_pose_stam, win_inter_point, 0).plan
+            if local_path is None or len(local_path.poses) == 0:
+                local_path = self.get_plan_local_srv.call(
+                    curr_pose_stam, self.goal_pose, 0
+                ).plan  # if fail, replan to goal
+                if local_path is None or len(local_path.poses) == 0:
+                    rospy.logwarn_throttle(1, "local re-plan failed")
+                    return False
+            self.local_path_pub.publish(local_path)
+            self.ref_path = local_path
+        self.interpo_ref_path = path_lin_interpo_cut(self.ref_path, self.T, self.N + 1, self.vel_ref)
+        self.interpo_ref_path.header = self.curr_odom.header
+        self.interpo_ref_path_pub.publish(self.interpo_ref_path)
+        return True
 
     def run(self):
         rate = rospy.Rate(self.freq)
         cmd_vel = Twist()
         while not rospy.is_shutdown():
 
-            if self.curr_odom is not None and self.enable_ctrl:
-                status = Int8()
-                status.data = NavStatus.EXECUTING
-                self.status_pub.publish(status)
+            if self.curr_odom is None:
+                continue
 
-                if self.is_xy_reached():
-                    rospy.loginfo_throttle(1, "XY reached!")
-                    cmd_vel = Twist()
-                    self.pub_cmd_vel.publish(cmd_vel)  # stop immediately
-                    self.rot2start_yaw = False
-                    self.rot2goal_yaw = True
+            status = Int8()
+            status.data = NavStatus.EXECUTING
+            self.status_pub.publish(status)
 
-                idx_odom_in_path = find_nearest_point(self.global_path, self.curr_pose)
-                if 0:
-                    if idx_odom_in_path is None:
-                        rospy.logwarn_throttle(1, "can't find nearest point")
-                        continue
-                    self.ref_path = Path()
-                    self.ref_path.header = self.global_path.header
-                    self.ref_path.poses = self.global_path.poses[idx_odom_in_path:]
-                if 1:
-                    win_inter_point = find_point_from_idx_dist(
-                        self.global_path, idx_odom_in_path, self.local_window_size
-                    )
-                    if win_inter_point is None:
-                        rospy.logwarn_throttle(1, "can't find nearest point")
-                        continue
-                    self.win_interp_point_pub.publish(win_inter_point)
-                    curr_pose_stam = PoseStamped()
-                    curr_pose_stam.header = self.curr_odom.header
-                    curr_pose_stam.header.frame_id = "map"
-                    curr_pose_stam.pose = self.curr_odom.pose.pose
-                    local_path = self.get_plan_local_srv.call(curr_pose_stam, win_inter_point, 0).plan
-                    if local_path is None or len(local_path.poses) == 0:
-                        local_path = self.get_plan_local_srv.call(
-                            curr_pose_stam, self.goal_pose, 0
-                        ).plan  # if fail, replan to goal
-                        if local_path is None or len(local_path.poses) == 0:
-                            rospy.logwarn_throttle(1,"local re-plan failed")
-                            continue
-                    self.local_path_pub.publish(local_path)
-                    self.ref_path = local_path
+            if self.fsm_state == FSMState.ROTATE_TO_START or self.fsm_state == FSMState.MPC_TRACKING:
+                if not self.local_replan():
+                    continue
 
-                self.interpo_ref_path = path_lin_interpo_cut(self.ref_path, self.T, self.N + 1, self.vel_ref)
-                self.interpo_ref_path.header = self.curr_odom.header
-                self.interpo_ref_path_pub.publish(self.interpo_ref_path)
+            if self.fsm_state == FSMState.ROTATE_TO_START:
+                rospy.loginfo_throttle(1, "Rotating to start yaw")
+                ref_point = pose2ndarray_se2(self.interpo_ref_path.poses[2].pose)
+                ref_yaw = np.arctan2(ref_point[1] - self.curr_pose[1], ref_point[0] - self.curr_pose[0])
+                ref_yaw = get_acute_angle(self.curr_pose[2], ref_yaw)
+                # rospy.loginfo(f"Rotating: {self.curr_pose[2]:.2f} -> {ref_yaw:.2f}")
+                if abs(ref_yaw - self.curr_pose[2]) < self.rot_th:
+                    self.fsm_state = FSMState.MPC_TRACKING
+                    continue
+                cmd_vel.linear.x = 0
+                cmd_vel.angular.z = self.yaw_pid.get_output(self.curr_pose[2], ref_yaw, 1 / self.freq)
 
-                if self.rot2start_yaw:
-                    rospy.loginfo_throttle(1, "Rotating to start yaw")
-                    ref_point = pose2ndarray_se2(self.interpo_ref_path.poses[2].pose)
-                    ref_yaw = np.arctan2(ref_point[1] - self.curr_pose[1], ref_point[0] - self.curr_pose[0])
-                    ref_yaw = get_acute_angle(self.curr_pose[2], ref_yaw)
-                    # rospy.loginfo(f"Rotating: {self.curr_pose[2]:.2f} -> {ref_yaw:.2f}")
-                    if abs(ref_yaw - self.curr_pose[2]) < self.rot_th:
-                        self.rot2start_yaw = False
-                        self.rot2goal_yaw = False
-                        continue
-                    cmd_vel = Twist()
+            if self.fsm_state == FSMState.MOVE_TO_GOAL_PID:
+                rospy.loginfo_throttle(1, "Moving to goal by PID")
+                ref_x = self.goal_pose.pose.position.x
+                ref_y = self.goal_pose.pose.position.y
+                ref_yaw = np.arctan2(ref_y - self.curr_pose[1], ref_x - self.curr_pose[0])
+                ref_yaw = get_acute_angle(self.curr_pose[2], ref_yaw)
+                dist = np.sqrt((ref_x - self.curr_pose[0]) ** 2 + (ref_y - self.curr_pose[1]) ** 2)
+                if dist < 0.05:
                     cmd_vel.linear.x = 0
-                    cmd_vel.angular.z = self.yaw_pid.get_output(self.curr_pose[2], ref_yaw, 1 / self.freq)
-                elif self.rot2goal_yaw:
-                    rospy.loginfo_throttle(1, "Rotating to goal yaw")
-                    ref_yaw = quat2yaw(self.goal_pose.pose.orientation)
-                    ref_yaw = get_acute_angle(self.curr_pose[2], ref_yaw)
-                    # rospy.loginfo(f"Rotating: {self.curr_pose[2]:.2f} -> {ref_yaw:.2f}")
-                    if abs(ref_yaw - self.curr_pose[2]) < self.ang_tol:  # really reached the goal
-                        msg = ReachGoal()
-                        msg.result.data = True
-                        msg.goal = self.goal_pose
-                        self.reach_pub.publish(msg)
-                        msg = Int8()
-                        msg.data = NavStatus.ARRIVED
-                        self.status_pub.publish(msg)
-                        rospy.loginfo("Goal reached!")
-                        self.rot2goal_yaw = False
-                        self.enable_ctrl = False
-                        continue
-                    cmd_vel = Twist()
-                    cmd_vel.linear.x = 0
-                    cmd_vel.angular.z = self.yaw_pid.get_output(self.curr_pose[2], ref_yaw, 1 / self.freq)
+                    cmd_vel.angular.z = 0
+                    for i in range(5):
+                        self.pub_cmd_vel.publish(cmd_vel)
+                        rate.sleep()
+                    self.fsm_state = FSMState.ROTATE_TO_GOAL
+                    continue
+                # cmd_vel.linear.x = abs(self.pos_pid.get_output(dist, 0, 1 / self.freq)) * 0.8
+                cmd_vel.linear.x = 0.5
+                cmd_vel.angular.z = self.yaw_pid.get_output(self.curr_pose[2], ref_yaw, 1 / self.freq) * 0.5
+                print(
+                    f"==>> ref_yaw: {ref_yaw:.2f}, curr_yaw: {self.curr_pose[2]:.2f}, vel_x: {cmd_vel.linear.x:.2f}, vel_w: {cmd_vel.angular.z:.2f}"
+                )
+
+            if self.fsm_state == FSMState.ROTATE_TO_GOAL:
+                rospy.loginfo_throttle(1, "Rotating to goal yaw")
+                ref_yaw = quat2yaw(self.goal_pose.pose.orientation)
+                ref_yaw = get_acute_angle(self.curr_pose[2], ref_yaw)
+                dist2goal = np.sqrt(
+                    (self.goal_pose_ar[0] - self.curr_pose[0]) ** 2 + (self.goal_pose_ar[1] - self.curr_pose[1]) ** 2
+                )
+                # rospy.loginfo(f"Rotating: {self.curr_pose[2]:.2f} -> {ref_yaw:.2f}")
+                if abs(ref_yaw - self.curr_pose[2]) < self.ang_tol:
+                    # if dist2goal > 0.1:
+                    #     self.fsm_state = FSMState.MOVE_TO_GOAL_PID
+                    #     continue
+                    msg = ReachGoal()
+                    msg.result.data = True
+                    msg.goal = self.goal_pose
+                    self.reach_pub.publish(msg)
+                    msg = Int8()
+                    msg.data = NavStatus.ARRIVED
+                    self.status_pub.publish(msg)
+                    rospy.loginfo("Goal reached!")
+                    self.fsm_state = FSMState.IDLE
+                    continue
+                cmd_vel.linear.x = 0
+                cmd_vel.angular.z = self.yaw_pid.get_output(self.curr_pose[2], ref_yaw, 1 / self.freq)
+
+            if self.fsm_state == FSMState.MPC_TRACKING:
+                rospy.loginfo_throttle(1, "MPC Tracking")
+                dist2goal = np.sqrt(
+                    (self.goal_pose_ar[0] - self.curr_pose[0]) ** 2 + (self.goal_pose_ar[1] - self.curr_pose[1]) ** 2
+                )
+                if dist2goal < 1:
+                    rospy.loginfo_throttle(1, "enter slow mode")
+                    self.controller.set_param("max_vel", 0.5)
+                    self.vel_ref = 0.5
                 else:
-                    rospy.loginfo_throttle(1, "Tracking path")
-                    if self.method == "mpc":
-                        cmd_vel = self.compute_cmd_vel_mpc()
-                    elif self.method == "lqr":
-                        cmd_vel = self.compute_cmd_vel_lqr()
-            else:
-                cmd_vel = Twist()
+                    self.controller.set_param("max_vel", self.max_vel)
+                    self.vel_ref = self.max_vel
+                if self.is_mpc_xy_reached():
+                    rospy.loginfo("MPC XY reached!")
+                    # cmd_vel = Twist()
+                    # for i in range(3):
+                    #     self.pub_cmd_vel.publish(cmd_vel)  # stop immediately
+                    #     rate.sleep()
+                    # self.fsm_state = FSMState.MOVE_TO_GOAL_PID
+                    self.fsm_state = FSMState.ROTATE_TO_GOAL
+                if self.method == "mpc":
+                    cmd_vel = self.compute_cmd_vel_mpc()
+                elif self.method == "lqr":
+                    cmd_vel = self.compute_cmd_vel_lqr()
+
+            if self.fsm_state == FSMState.IDLE:
+                rospy.loginfo_throttle(1, "IDLE")
+                cmd_vel.linear.x = 0
+                cmd_vel.angular.z = 0
                 status = Int8()
                 status.data = NavStatus.IDLE
                 self.status_pub.publish(status)
-            # self.pub_cmd_vel.publish(cmd_vel)
+
+            self.pub_cmd_vel.publish(cmd_vel)
             rate.sleep()
 
 

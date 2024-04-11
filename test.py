@@ -12,7 +12,4 @@ import numpy as np
 #     client = DynamicReconfigureClient("/move_base/global_costmap/", timeout=30)
 #     rst = client.update_configuration({"footprint": fp1})
 #     print(rst)
-a= [1,2]
-b =[2,3]
-rest = np.linalg.norm(a)
-print(f"==>> rest: {rest}")
+print([x for x in range(-3,0)])

@@ -115,13 +115,16 @@ class NMPCC:
 
         # cost function
         cost = 0
-        Q_time = []
+        Q_time, R_time = [], []
         Q1_scale = np.linspace(Q[0, 0], 0, self.N + 1)
         Q2_scale = np.linspace(Q[1, 1], 0, self.N + 1)
         for i in range(self.N + 1):
             Q_t = np.diag([Q1_scale[i], Q2_scale[i], Q[2, 2]])
             Q_time.append(Q_t)
-        Q_time = np.array(Q_time)
+            R_time.append(R)
+        Q_time, R_time = np.array(Q_time), np.array(R_time)
+        for i in range(-3, 0):  # # minimize the control input near the end
+            R_time[i] *= 10
         for i in range(self.N + 1):
             state_error_ = self.var_states[i, :] - self.x_ref[i, :]
             if i < self.N:
@@ -130,11 +133,13 @@ class NMPCC:
                     cost
                     + ca.mtimes([state_error_, self.ca_params["Q"], state_error_.T])
                     # + ca.mtimes([state_error_, Q_time[i], state_error_.T])
-                    + ca.mtimes([control_error_, self.ca_params["R"], control_error_.T])
+                    # + ca.mtimes([control_error_, self.ca_params["R"], control_error_.T])
+                    + ca.mtimes([control_error_, R_time[i], control_error_.T])
                 )
                 # cost += self.var_controls[i, 0] * 2
             else:
                 cost = cost + ca.mtimes([state_error_, self.ca_params["Qf"], state_error_.T])
+
         self.opti.minimize(cost)
 
         # constraints
@@ -171,7 +176,7 @@ class NMPCC:
 
         ## input limits
         # self.opti.subject_to(self.opti.bounded(-self.ca_params["max_vel"], v, self.ca_params["max_vel"]))
-        self.opti.subject_to(self.opti.bounded(-0.2, v, self.ca_params["max_vel"]))
+        self.opti.subject_to(self.opti.bounded(0.2, v, self.ca_params["max_vel"]))
         self.opti.subject_to(self.opti.bounded(-self.ca_params["max_omega"], omega, self.ca_params["max_omega"]))
         # self.opti.subject_to(v**2 + omega**2 <= 6**2)
 

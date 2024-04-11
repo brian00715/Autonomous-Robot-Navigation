@@ -67,7 +67,6 @@ for indicator in metrics:
 plt.figure(figsize=(5, 3))
 bar_width = 0.35
 index = np.arange(len(labels))
-data["MPC"]["acc_trans_std"] = 0.6
 for i, label in enumerate(labels):
     acc_trans_ave = data[label]["acc_trans_ave"]
     acc_trans_std = data[label]["acc_trans_std"]
