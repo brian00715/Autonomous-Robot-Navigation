@@ -8,7 +8,6 @@ Please open a terminal in your workspace and execute the following commands to i
 
 ```shell
 sudo apt-get update
-# sudo apt-get install -y  python3-rosdep stow
 sudo apt-get install -y python3-wstool python3-rosdep ninja-build stow
 ```
 
@@ -22,7 +21,7 @@ rosdep install --from-paths src --ignore-src --rosdistro=${ROS_DISTRO} -y
 
 ### Install Abseil-cpp Library
 
-Cartographer requires the abseil-cpp library, which needs to be manually installed using the provided script:
+Cartographer requires the `abseil-cpp` library, which needs to be manually installed using the provided script:
 
 Run the `install_abseil.sh` script:
 
@@ -41,7 +40,9 @@ catkin build
 After completing these steps, Cartographer ROS should be successfully installed on your system. You can activate it by running:
 
 ```shell
-roslaunch final_slam mapping_carto.launch
+roslaunch final_slam mapping_carto.launch # default Mapping configuration
+roslaunch final_slam mapping_carto_2d.launch # 2D Cartographer Mapping
+roslaunch final_slam mapping_carto_3d.launch # 3D Cartographer Mapping
 ```
 
 
