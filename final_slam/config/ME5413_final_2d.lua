@@ -124,9 +124,9 @@ options = {
   -- Add parameter 'publish_tracked_pose' for 'evo' plotting
   publish_tracked_pose = true,
   use_pose_extrapolator = true,
-  use_odometry = false,
-  use_nav_sat = false,
-  use_landmarks = true,
+  use_odometry = true,
+  use_nav_sat = true,
+  use_landmarks = false,
   publish_to_tf = true,
   num_laser_scans = 1,
   num_multi_echo_laser_scans = 0,

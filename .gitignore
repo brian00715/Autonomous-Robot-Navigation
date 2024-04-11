@@ -62,3 +62,7 @@ pcl_com
 # jackal
 ceres-solver
 perception_pcl
+maps_for_test
+pcds
+evaluation_bag
+FAST_LIO_LOCALIZATION

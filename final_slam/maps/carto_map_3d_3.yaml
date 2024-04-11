@@ -1,6 +1,0 @@
-image: carto_map_3d_3.pgm
-resolution: 0.05
-origin: [-1.75, -15.65, 0.0]
-negate: 0
-occupied_thresh: 0.65
-free_thresh: 0.196
