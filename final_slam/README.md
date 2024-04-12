@@ -21,9 +21,7 @@ rosdep install --from-paths src --ignore-src --rosdistro=${ROS_DISTRO} -y
 
 ### Install Abseil-cpp Library
 
-Cartographer requires the `abseil-cpp` library, which needs to be manually installed using the provided script:
-
-Run the `install_abseil.sh` script:
+Cartographer requires the `abseil-cpp` library, which needs to be manually installed using the provided script. Run the `install_abseil.sh` script:
 
 ```shell
 ~/your_workspace/src/ME5413_Final_Project/third_party/cartographer/cartographer/scripts/install_abseil.sh
