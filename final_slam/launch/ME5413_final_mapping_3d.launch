@@ -32,6 +32,7 @@
     <remap from="/points2" to="/mid/points" />
     <remap from="/odom" to="/odometry/filtered" />
     <remap from="/imu" to="/imu/data" />
+    <remap from="/fix" to="/navsat/fix" />
   </node>
 
   <node name="cartographer_occupancy_grid_node" pkg="cartographer_ros"

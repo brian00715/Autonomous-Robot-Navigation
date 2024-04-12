@@ -1,0 +1,16 @@
+<launch>
+  <!-- Connect the robot to a keyboard teleop controller -->
+  <!-- <node name="teleop_twist_keyboard" pkg="teleop_twist_keyboard" type="teleop_twist_keyboard.py" output="screen" respawn="true" >
+    <param name="repeat_rate" value="10.0"/>
+  </node> -->
+
+  <node name="pose2odom" pkg="final_slam" type="pose2odom.py" output="screen"/>
+
+  <!-- Launch Cartographer -->
+  <include file="$(find final_slam)/launch/all_sensor_localization_2d.launch" />
+
+  <!-- Launch Rviz with our settings -->
+  <!-- <node type="rviz" name="rviz" pkg="rviz" args="-d $(find final_slam)/rviz/gmapping.rviz"
+    output="log" respawn="true" /> -->
+
+</launch>

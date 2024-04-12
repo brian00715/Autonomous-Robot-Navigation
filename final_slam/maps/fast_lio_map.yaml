@@ -1,0 +1,7 @@
+image: fast_lio_map.pgm
+resolution: 0.050000
+origin: [-1.366284, -15.328727, 0.000000]
+negate: 0
+occupied_thresh: 0.65
+free_thresh: 0.196
+

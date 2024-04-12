@@ -24,7 +24,7 @@
 
 
   <!-- Launch Rviz with our settings -->
-  <!-- <node type="rviz" name="rviz" pkg="rviz" args="-d $(find final_slam)/config/gmapping.rviz"
+  <!-- <node type="rviz" name="rviz" pkg="rviz" args="-d $(find final_slam)/rviz/gmapping.rviz"
     output="log" respawn="true" /> -->
 
 </launch>
