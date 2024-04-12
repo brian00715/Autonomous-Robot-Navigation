@@ -20,8 +20,7 @@
   <!-- Launch Cartographer -->
   <include file="$(find final_slam)/launch/ME5413_final_localization_2d.launch" />
 
-  <!-- <node pkg="tf" type="static_transform_publisher" name="world2map" args="0 0 0 0 0 0 world map
-  10" /> -->
+  <node pkg="tf" type="static_transform_publisher" name="world2map" args="0 0 0 0 0 0 world map 10" />
 
 
   <!-- Launch Rviz with our settings -->

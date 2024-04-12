@@ -82,7 +82,7 @@ void GoalPublisherNode::robotOdomCallback(const nav_msgs::Odometry::ConstPtr& od
   transformStamped.transform.rotation.z = T_robot_world.getRotation().getZ();
   transformStamped.transform.rotation.w = T_robot_world.getRotation().getW();
   
-  this->tf2_bcaster_.sendTransform(transformStamped);
+  // this->tf2_bcaster_.sendTransform(transformStamped);
 
   return;
 };

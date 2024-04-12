@@ -49,7 +49,7 @@
   <!-- Use doc_depend for packages you need only for building documentation: -->
   <!--   <doc_depend>doxygen</doc_depend> -->
   <buildtool_depend>catkin</buildtool_depend>
-  
+
   <depend>nav_msgs</depend>
   <depend>geometry_msgs</depend>
   <build_depend>message_generation</build_depend>
@@ -57,7 +57,8 @@
   <exec_depend>message_runtime</exec_depend>
   <exec_depend>roscpp</exec_depend>
   <build_depend>python-catkin-package</build_depend>
-<exec_depend>python-catkin-package</exec_depend>
+  <exec_depend>python-catkin-package</exec_depend>
+  <depend>graph_planner</depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>
