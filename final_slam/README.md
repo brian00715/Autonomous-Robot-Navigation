@@ -48,7 +48,7 @@ roslaunch final_slam mapping_carto_3d.launch # 3D Cartographer Mapping
 An example mapping by 2D Cartographer is shown as follows:
 
 <p align="center">
-    <img src="maps/carto_map_2d.png" alt="carto_map" width="60%">
+    <img src="maps/carto_map_2d.png" alt="carto_map" width="40%">
 </p>
 
 ## Fast-LIO
@@ -116,7 +116,7 @@ rosrun map_server map_saver
 Then you can obtain the `.pgm` map file. An example is shown as follows:
 
 <p align="center">
-    <img src="maps/fast_lio_map.png" alt="fast_lio_map" width="60%">
+    <img src="maps/fast_lio_map.png" alt="fast_lio_map" width="40%">
 </p>
 
 ## Map Fusion
@@ -131,5 +131,5 @@ python3 map_fusion
 You will obtain the fused map named 'fusion_map.pgm' in '**/final_slam/map**'. The result is shown as follows:
 
 <p align="center">
-    <img src="maps/fusion_map.png" alt="fusion_map" width="60%">
+    <img src="maps/fusion_map.png" alt="fusion_map" width="40%">
 </p>
