@@ -30,7 +30,8 @@
           -configuration_basename ME5413_final_2d.lua" >
       <!-- output="screen"> -->   
     <remap from="/scan" to="/front/scan" />
-    <remap from="/odom" to="/odometry/filtered" />
+    <!-- <remap from="/odom" to="/odometry//filtered" /> -->
+    <remap from="/odom" to="/jackal_velocity_controller/odom" />
     <remap from="/imu" to="/imu/data" />
     <remap from="/fix" to="/navsat/fix" />
   </node>
@@ -39,4 +40,3 @@
       type="cartographer_occupancy_grid_node" args="-resolution 0.05 -pure_localization 0" />
 
 </launch>
-

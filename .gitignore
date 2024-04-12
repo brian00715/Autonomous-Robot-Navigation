@@ -57,9 +57,6 @@ hw1
 hw2
 hw3
 pcl_com
-# cartographer
-# cartographer_ros
-# jackal
 ceres-solver
 perception_pcl
 maps_for_test

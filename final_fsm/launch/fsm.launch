@@ -1,0 +1,33 @@
+<launch>
+
+  <!-- Connect the robot to a keyboard teleop controller -->
+  <!-- <node name="teleop_twist_keyboard" pkg="teleop_twist_keyboard" type="teleop_twist_keyboard.py" output="screen" respawn="true"/> -->
+  <!-- Run the map server -->
+  <!-- <arg name="map_file" default="$(find final_slam)/maps/final_map_2d_processed.yaml"/>
+  <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" /> -->
+
+  <!-- Launch Gmapping -->
+  <!-- <include file="$(find final_slam)/launch/cartographer.launch" /> -->
+
+  <!-- Launch Localization -->
+  <!-- <include file="$(find final_slam)/launch/localization_carto.launch" /> -->
+
+  <!-- Launch Navigation -->
+  <!-- <include file="$(find final_pnc)/launch/navigation.launch" /> -->
+
+
+  <!-- Launch Perception -->
+  <!-- <include file="$(find final_percep)/launch/final_percep.launch" /> -->
+
+  <!-- Launch the mapper -->
+  <include file="$(find occ_grid_mapping)/launch/mapping.launch" />
+
+  <!-- Launch the explore controller -->
+  <node ns="final_fsm" pkg="final_fsm" type="explore_controller.py" name="explore_controller" output="screen" />
+  <include file="$(find final_fsm)/launch/explore.launch" />
+
+  <!-- Launch the state machine -->
+  <node ns="final_fsm" pkg="final_fsm" type="state_machine_node.py" name="state_machine_node" output="screen" />
+
+
+</launch>

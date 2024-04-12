@@ -1,0 +1,11 @@
+map_topic: "/map"
+path_topic: "/path"
+
+# Add more parameters here to make the RRT algorithm tunable
+rrt_planner:
+  max_iter: 10000
+  forward_max_step_size: 50
+  goal_reach_th: 20 # threshold for judging reaching the goal
+  obs_path_discre_coef: 0.5 # used for judging wether there exists obs on a path. number of discrete points = edge_distance * obs_path_discre_coef
+  radius: 5 # search radius for RRT*
+  mode: "star" # std,star,informed

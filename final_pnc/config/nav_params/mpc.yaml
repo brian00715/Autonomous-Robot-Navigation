@@ -1,0 +1,29 @@
+# odom_topic: "/odometry/gps/fix"
+# odom_topic: "/final_slam/odom"
+odom_topic: "/gazebo/ground_truth/state"
+# odom_topic: "/integrated_to_init"
+
+ref_path_topic: "/move_base/TrajectoryPlannerROS/global_plan"
+
+# make_plan_topic: "/move_base/NavfnROS/make_plan"
+make_plan_topic: "/move_base/make_plan"
+# make_plan_local_topic: "/move_base_local/NavfnROS/make_plan"
+make_plan_local_topic: "/move_base_local/move_base_local/NavfnROS/make_plan"
+# make_plan_local_topic: "/move_base_local/make_plan"
+
+freq: 50 # control frequency
+rot_th: 15 # degree. rotate in place if the yaw error is less than
+xy_tol: 0.15 # (m) circular region a und the goal
+ang_tol: 10 # (degree) angle tolerance
+local_window_size: 3 # (m)
+
+T: 0.05 # forward time step
+N: 20 # number of prediction steps
+vel_ref: 2 # 2 reference velocity, used both for trajecgory interpolation and mpc solving
+max_vel: 2 # 2
+max_omega: 2 # 2
+max_lin_acc: 15 # 20
+max_ang_acc: 20 # 25
+Q: [5, 5, 0] # weights for x, y, theta, respectively
+R: [0.2, 0.2] # weights for vel_x, omega, respectively
+

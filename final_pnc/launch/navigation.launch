@@ -1,0 +1,23 @@
+<launch>
+
+  <arg name="enable_teleop" default="false" />
+
+  <group if="$(arg enable_teleop)">
+    <node name="teleop_twist_keyboard" pkg="teleop_twist_keyboard" type="teleop_twist_keyboard.py"
+      output="screen" respawn="false">
+      <param name="repeat_rate" type="double" value="10.0" />
+    </node>
+  </group>
+
+  <!-- Launch Move Base -->
+  <include file="$(find final_pnc)/launch/move_base.launch" />
+
+
+  <!-- Launch Rviz with our settings -->
+  <node type="rviz" name="rviz" pkg="rviz" args="-d $(find final_pnc)/config/navigation.rviz"
+    output="log" respawn="false" launch-prefix="bash -c 'sleep 0; $0 $@';" />
+
+  <node ns="me5413_world" pkg="me5413_world" type="goal_publisher_node" name="goal_publisher_node"
+    output="screen" launch-prefix="bash -c 'sleep 0; $0 $@';" />
+
+</launch>
