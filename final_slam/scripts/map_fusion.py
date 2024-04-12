@@ -36,11 +36,12 @@ rows, cols = map2.shape
 M = cv2.getRotationMatrix2D((cols / 2, rows / 2), adjusted_angle, 1)
 map2 = cv2.warpAffine(map2, M, (cols, rows))
 border_size = 5
-map2 = cv2.copyMakeBorder(map2, border_size, border_size, border_size, border_size, cv2.BORDER_CONSTANT, value=255)
+map2 = cv2.copyMakeBorder(map2, border_size, border_size, border_size, border_size, cv2.BORDER_CONSTANT, value=0)
 
 
 # Map Fusion
 map2 = cv2.resize(map2, (map1.shape[1], map1.shape[0]))
+# cv2.imwrite('adjusted_map.png', map2)
 alpha = 0.5  # Blend weight, adjustable
 fusion_map = cv2.addWeighted(map1, alpha, map2, 1-alpha, 0)
 _, fusion_map = cv2.threshold(fusion_map, 200, 255, cv2.THRESH_BINARY)
