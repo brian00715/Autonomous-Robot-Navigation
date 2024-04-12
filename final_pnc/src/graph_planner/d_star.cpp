@@ -1,19 +1,4 @@
-/**
- * *********************************************************
- *
- * @file: d_star.cpp
- * @brief: Contains the D* planner class
- * @author: Zhanyu Guo
- * @date: 2023-03-19
- * @version: 1.0
- *
- * Copyright (c) 2024, Zhanyu Guo.
- * All rights reserved.
- *
- * --------------------------------------------------------
- *
- * ********************************************************
- */
+
 #include "d_star.h"
 
 namespace global_planner

@@ -1,19 +1,4 @@
-/**
- * *********************************************************
- *
- * @file: jump_point_search.cpp
- * @brief: Contains the Jump Point Search(JPS) planner class
- * @author: Yang Haodong
- * @date: 2023-12-14
- * @version: 1.1
- *
- * Copyright (c) 2024, Yang Haodong. 
- * All rights reserved.
- * 
- * --------------------------------------------------------
- *
- * ********************************************************
- */
+
 #include "jump_point_search.h"
 
 namespace global_planner

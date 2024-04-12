@@ -1,19 +1,4 @@
-/**
-* *********************************************************
-*
-* @file: s_theta_star.cpp
-* @brief: Contains the S-Theta* planner class
-* @author: Wu Maojia
-* @date: 2024-3-9
-* @version: 1.0
-*
-* Copyright (c) 2024, Wu Maojia, Yang Haodong.
-* All rights reserved.
-*
-* --------------------------------------------------------
-*
-* ********************************************************
-*/
+
 #include "s_theta_star.h"
 
 namespace global_planner

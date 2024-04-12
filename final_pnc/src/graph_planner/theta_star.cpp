@@ -1,19 +1,4 @@
-/**
- * *********************************************************
- *
- * @file: theta_star.cpp
- * @brief: Contains the Theta* planner class
- * @author: Wu Maojia, Yang Haodong
- * @date: 2023-10-01
- * @version: 1.3
- *
- * Copyright (c) 2024, Wu Maojia, Yang Haodong.
- * All rights reserved.
- *
- * --------------------------------------------------------
- *
- * ********************************************************
- */
+
 #include "theta_star.h"
 
 namespace global_planner
@@ -26,7 +11,7 @@ namespace global_planner
    */
   ThetaStar::ThetaStar(int nx, int ny, double resolution) : GlobalPlanner(nx, ny, resolution)
   {
-    factor_ = 0.2;
+    factor_ = 0.8;
   };
 
   /**
@@ -85,16 +70,25 @@ namespace global_planner
         node_new.h_ = helper::dist(node_new, goal);
         node_new.id_ = grid2Index(node_new.x_, node_new.y_);
         node_new.pid_ = current.id_;
-        // node_new.g_ += global_costmap[node_new.id_] * resolution_;
-        // node_new.h_ += global_costmap[node_new.id_] * resolution_;
 
         // current node do not exist in closed list
         if (closed_list.find(node_new.id_) != closed_list.end())
           continue;
 
         // next node hit the boundary or obstacle
-        if ((node_new.id_ < 0) || (node_new.id_ >= ns_) ||
-            (costs_[node_new.id_] >= lethal_cost_ * factor_ && costs_[node_new.id_] >= costs_[current.id_]))
+        // if ((node_new.id_ < 0) || (node_new.id_ >= ns_) ||
+        //     (costs_[node_new.id_] >= lethal_cost_ * factor_ && costs_[node_new.id_] >= costs_[current.id_]))
+        if ((node_new.id_ < 0) || (node_new.id_ >= ns_))
+        {
+          continue;
+        }
+        unsigned char cost_new = costs_[node_new.id_], cost_current = costs_[current.id_];
+        // printf("cost_new: %d, cost_current: %d\n", cost_new, cost_current);
+        if (cost_new == 255)
+          cost_new = 0;
+        if (cost_current == 255)
+          cost_current = 0;
+        if (cost_new >= lethal_cost_ * factor_ && cost_new >= cost_current)
           continue;
 
         // get the coordinate of parent node
@@ -109,6 +103,7 @@ namespace global_planner
           parent = find_parent->second;
           _updateVertex(parent, node_new);
         }
+
         open_list.push(node_new);
       }
     }

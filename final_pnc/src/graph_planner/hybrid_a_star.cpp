@@ -1,19 +1,4 @@
-/**
- * *********************************************************
- *
- * @file: hybrid_a_star.cpp
- * @brief: Contains the Hybrid A* planner class
- * @author: Yang Haodong
- * @date: 2024-01-03
- * @version: 1.0
- *
- * Copyright (c) 2024, Yang Haodong.
- * All rights reserved.
- *
- * --------------------------------------------------------
- *
- * ********************************************************
- */
+
 #include <iostream>
 #include <queue>
 #include <unordered_set>

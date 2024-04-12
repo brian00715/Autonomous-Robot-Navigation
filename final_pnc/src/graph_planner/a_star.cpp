@@ -1,19 +1,4 @@
-/**
- * *********************************************************
- *
- * @file: a_star.cpp
- * @brief: Contains the A* (dijkstra and GBFS) planner class
- * @author: Yang Haodong
- * @date: 2023-12-12
- * @version: 1.2
- *
- * Copyright (c) 2024, Yang Haodong. 
- * All rights reserved.
- * 
- * --------------------------------------------------------
- *
- * ********************************************************
- */
+
 #include "a_star.h"
 
 #include <queue>
@@ -98,6 +83,7 @@ bool AStar::plan(const unsigned char* global_costmap, const Node& start, const N
       // explore a new node
       Node node_new = current + motion;
       node_new.id_ = grid2Index(node_new.x_, node_new.y_);
+      node_new.g_ += global_costmap[node_new.id_];
 
       // node_new in closed list
       if (closed_list.find(node_new.id_) != closed_list.end())
