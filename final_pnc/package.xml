@@ -59,10 +59,8 @@
   <build_depend>python-catkin-package</build_depend>
   <exec_depend>python-catkin-package</exec_depend>
   <depend>graph_planner</depend>
-
-  <!-- The export tag contains other, unspecified, tags -->
-  <export>
-    <!-- Other tools can request additional information be placed here -->
-
-  </export>
+  <depend>move_base</depend>
+  <depend>dwb_local_planner</depend>
+  <depend>teb_local_planner</depend>
+  <depend>navfn</depend>
 </package>

@@ -1,9 +1,12 @@
-# ME5413 Final Project - Group 8
+# NUS ME5413 Final Project - Group 8
 
 Demo:
+
 ![](./docs/30s.gif)
 
-For the original simulation environment that this project relies on, please refer to [ME5413_Final_Project](https://github.com/NUS-Advanced-Robotics-Centre/ME5413_Final_Project).
+For the insturcitons of the original simulation environment that this project relies on, please refer to [ME5413_Final_Project](https://github.com/NUS-Advanced-Robotics-Centre/ME5413_Final_Project).
+
+If you have any questions, please feel free to contact us: [smkk00715@gmail.com](mailto:smkk00715@gmail.com)
 
 ## Structure
 
@@ -17,7 +20,7 @@ For the original simulation environment that this project relies on, please refe
 ├── jackal # Jackal package
 ├── jackal_description # Modified Jackal model package
 ├── me5413_world # Gazebo simulation package
-└── third_party # Third-party packages
+└── third_party # Third-party packages. We have modified or tailored some of them.
 ```
 
 ## Installation
@@ -28,9 +31,21 @@ For the original simulation environment that this project relies on, please refe
 - ROS Noetic
 - C++11 and above
 
-### ROS dependencies
+## Some useful commands
+
+In your `.bashrc` or `.zshrc` file, add the following lines:
+
 ```shell
-sudo apt install ros-noetic-rviz-imu-plugin ros-noetic-move-base ros-noetic-navfn tmux python3-catkin-tools zsh python3-wstool python3-rosdep ninja-build stow
+alias rosk='rosnode kill -a ; killall -9 roscore rosmaster gzserver gazebo rviz ; kill -9 $(pgrep -f rqt)' # kill all ROS processes immediately
+alias gazebok="pkill -P $(pgrep -f gazebo.launch) ; pkill -9 gzserver ; pkill -9 gzclient" # kill gazebo immediately
+alias rqttf="rosrun rqt_tf_tree rqt_tf_tree"
+alias rqtrecon="rosrun rqt_reconfigure rqt_reconfigure"
+```
+
+### ROS dependencies
+
+```shell
+sudo apt install ros-noetic-rviz-imu-plugin ros-noetic-move-base ros-noetic-navfn tmux python3-catkin-tools python3-wstool python3-rosdep ninja-build stow ffmpeg
 ```
 
 ### Python dependencies
@@ -55,7 +70,8 @@ export PYTHONPATH=$PYTHONPATH:/usr/lib/python3.8/dist-packages
 
 > Note: You can choose to install the relied SLAM packages. No need to install all of them.
 
-#### 1. Cartographer 
+#### 1. Cartographer (Recommended)
+
 Please open a terminal in your workspace and execute the following commands to install Cartographer.
 
 - Install Cartographer Dependencies
@@ -74,45 +90,44 @@ Please open a terminal in your workspace and execute the following commands to i
   ~/your_workspace/src/ME5413_Final_Project/third_party/cartographer/cartographer/scripts/install_abseil.sh
   ```
 
--  Build and Install
+- Build and Install
 
-   Build Cartographer ROS and install it:
+  Build Cartographer ROS and install it:
 
-   ```shell
-   catkin build
-   ```
+  ```shell
+  catkin build
+  ```
 
-   After completing these steps, Cartographer ROS should be successfully installed on your system. You can activate it by running:
+  After completing these steps, Cartographer ROS should be successfully installed on your system. You can activate it by running:
 
-   ```shell
-   roslaunch final_slam mapping_carto.launch # default Mapping configuration
-   roslaunch final_slam mapping_carto_2d.launch # 2D Cartographer Mapping
-   roslaunch final_slam mapping_carto_3d.launch # 3D Cartographer Mapping
-   ```
+  ```shell
+  roslaunch final_slam mapping_carto.launch # default Mapping configuration
+  roslaunch final_slam mapping_carto_2d.launch # 2D Cartographer Mapping
+  roslaunch final_slam mapping_carto_3d.launch # 3D Cartographer Mapping
+  ```
 
-   An example mapping by 2D Cartographer is shown as follows:
+  An example mapping by 2D Cartographer is shown as follows:
 
-   <p align="center">
-       <img src="final_slam/maps/carto_map_2d.png" alt="carto_map" width="40%">
-   </p>
+  <p align="center">
+      <img src="final_slam/maps/carto_map_2d.png" alt="carto_map" width="40%">
+  </p>
 
 #### 2. Fast-LIO
 
 Fast-LIO relies on `Livox-SDK` and `livox_ros_driver`, please satisify prerequisites first before compile `Fast-LIO`.
 
-
 For **Ubuntu 18.04 or higher**, with **ROS >= Melodic**, the **default** PCL and Eigen is enough for FAST-LIO to work normally.
 
--  **Livox-SDK**
-   `Livox SDK` is the software development kit designed for all Livox products and required by Fast-LIO. To install and compile the SDK, 
-   please follow:
+- **Livox-SDK**
+  `Livox SDK` is the software development kit designed for all Livox products and required by Fast-LIO. To install and compile the SDK,
+  please follow:
 
-   ```shell
-   cd ~/your_workspace/src/ME5413_Final_Project/third_party/Livox-SDK
-   cd build && cmake ..
-   make
-   sudo make install
-   ```
+  ```shell
+  cd ~/your_workspace/src/ME5413_Final_Project/third_party/Livox-SDK
+  cd build && cmake ..
+  make
+  sudo make install
+  ```
 
 - **livox_ros_driver**
 
@@ -123,74 +138,71 @@ For **Ubuntu 18.04 or higher**, with **ROS >= Melodic**, the **default** PCL and
   catkin build livox_ros_driver
   ```
 
--  **Build and run Fast-LIO**
+- **Build and run Fast-LIO**
 
-   If all the prerequisites are satisfied, Fast-LIO can be easily complied by running
+  If all the prerequisites are satisfied, Fast-LIO can be easily complied by running
 
-   ```shell
-   cd ~/your_workspace
-   catkin build fast_lio
-   ```
+  ```shell
+  cd ~/your_workspace
+  catkin build fast_lio
+  ```
 
-   To utilize Fast-LIO for mapping, execute the following commands:
+  To utilize Fast-LIO for mapping, execute the following commands:
 
-   ```shell
-   source ~/your_workspace/devel/setup.bash
-   roslaunch final_slam mapping_fast_lio.launch
-   ```
+  ```shell
+  source ~/your_workspace/devel/setup.bash
+  roslaunch final_slam mapping_fast_lio.launch
+  ```
 
-   An point cloud example is shown as follows:
+  An point cloud example is shown as follows:
 
-   <p align="center">
-       <img src="final_slam/maps/fast_lio_point_cloud.png" alt="fast_lio_pcd" width="40%">
-   </p>
+  <p align="center">
+      <img src="final_slam/maps/fast_lio_point_cloud.png" alt="fast_lio_pcd" width="40%">
+  </p>
 
+- **Point Cloud to Map**
 
--  **Point Cloud to Map**
+  After mapping with Fast-LIO, we offer a ROS package called `pcd2pgm` to convert the `.pcd` files generated by Fast-Lio (located in '**/src/third_party/FAST_LIO/PCD**') into standard `.pgm` map files. To compile this package, please execute:
 
-   After mapping with Fast-LIO, we offer a ROS package called `pcd2pgm` to convert the `.pcd` files generated by Fast-Lio (located in '**/src/third_party/FAST_LIO/PCD**') into standard `.pgm` map files. To compile this package, please execute:
+  ```shell
+  cd ~/your_workspace
+  catkin build pcd2pgm
+  ```
 
+  To generate the map, run the following command:
 
-   ```shell
-   cd ~/your_workspace
-   catkin build pcd2pgm
-   ```
+  ```shell
+  source ~/your_workspace/devel/setup.bash
+  roslaunch pcd2pgm pcd2pgm.launch
+  ```
 
-   To generate the map, run the following command:
+  After seeing '**data size =**' displayed in the terminal, open a new terminal in your map folder and execute:
 
-   ```shell
-   source ~/your_workspace/devel/setup.bash
-   roslaunch pcd2pgm pcd2pgm.launch
-   ```
+  ```shell
+  rosrun map_server map_saver
+  ```
 
-   After seeing '**data size =**' displayed in the terminal, open a new terminal in your map folder and execute:
+  Then you can obtain the `.pgm` map file. An example is shown as follows:
 
-   ```shell
-   rosrun map_server map_saver
-   ```
+  <p align="center">
+      <img src="final_slam/maps/fast_lio_map.png" alt="fast_lio_map" width="40%">
+  </p>
 
-   Then you can obtain the `.pgm` map file. An example is shown as follows:
+#### 3. Map Fusion
 
-   <p align="center">
-       <img src="final_slam/maps/fast_lio_map.png" alt="fast_lio_map" width="40%">
-   </p>
+To fully utilize the information from maps obtained by Cartographer and Fast-LIO respectively, we provide a simple Python script with image processing methods to fuse these two high-quality maps into one. To perform this fusion, execute:
 
-####  3. Map Fusion
+```shell
+cd ~/your_workspace/src/final_slam/scripts
+chmod +x map_fusion.py
+python3 map_fusion
+```
 
-   To fully utilize the information from maps obtained by Cartographer and Fast-LIO respectively, we provide a simple Python script with image processing methods to fuse these two high-quality maps into one. To perform this fusion, execute:
-
-   ```shell
-   cd ~/your_workspace/src/final_slam/scripts
-   chmod +x map_fusion.py
-   python3 map_fusion
-   ```
-
-   You will obtain the fused map named 'fusion_map.pgm' in '**/final_slam/map**'. The result is shown as follows:
+You will obtain the fused map named 'fusion_map.pgm' in '**/final_slam/map**'. The result is shown as follows:
 
    <p align="center">
        <img src="final_slam/maps/fusion_map.png" alt="fusion_map" width="40%">
    </p>
-
 
 ### Build
 
@@ -200,48 +212,70 @@ For **Ubuntu 18.04 or higher**, with **ROS >= Melodic**, the **default** PCL and
 mkdir -p ~/me5413_final_ws/src
 cd ~/me5413_final_ws/
 git clone https://github.com/brian00715/ME5413_Final_Project src
-
 catkin config -DPYTHON_EXECUTABLE=/usr/bin/python3 -DCMAKE_BUILD_TYPE=Release
-
 catkin build final_slam final_pnc final_percep final_fsm jackal* interactive_tools me5413_world graph_search
+echo "source ~/me5413_final_ws/devel/setup.bash" >> ~/.bashrc
 ```
-
 
 ## Running
 
 ### One-click launch
 
+> Note: please confirm the conda environment and Cartographer have already been installed and built scuccessfully before running the one-click launch.
+
 ```shell
 rosrun final_fsm start.sh
+rosrun final_fsm start.sh -e -r # enable EKF and enable screen recording
 ```
 
 ### Step-by-step launch
+
+- Gazebo simulation
+
+  ```shell
+  export ENABLE_EKF=false # set to false means using the ground truth odometry, otherwise the EKF odometry fusing IMU the wheel odometry
+  roslaunch me5413_world me5413_world.launch
+  ```
 
 - Mapping
 
 Please refer to [SLAM](#SLAM) for detailed instructions.
 
+- Localization (With built map)
 
-
-- Localization
-
-```shell
-roslaunch final_slam localization_carto.launch # cartographer by default
-```
-
-- Navigation(with finate state machine)
-
-```shell
-roslaunch me5413_world world.launch
-roslaunch final_fsm fsm.launch
-```
+  ```shell
+  roslaunch final_slam localization_carto.launch # cartographer by default
+  ```
 
 - Navigation
 
-```shell
-roslaunch final_pnc navigation.launch
-```
+  - Gazebo, cartographer, and navigation
 
+    ```shell
+    rosrun final_pnc debug.sh
+    ```
+
+  - Only navigation
+
+    ```shell
+    roslaunch final_pnc pnc.launch
+    ```
+
+- FSM
+
+  ```shell
+  roslaunch final_fsm fsm.launch
+  ```
+
+## Configuration
+
+### Planning and control
+
+You can choose which global planner or local planner to use in `final_pnc/launch/pnc.launch`.
+
+> Note: For the current version, if you want to use the DWA or TEB local planner, you should set arg `local_planner` to a value other than `mpc`. Uncomment the corresponding local planner from lines 40-47 and comment out lines 49-50 in `final_pnc/launch/pnc.launch`.
+
+You can modify the parameters in `final_pnc/config/*/*.yaml` to adjust the performance. For exmaple, you can adjust the `max_vel` in `final_pnc/config/nav_params/mpc.yaml` to change the maximum velocity of MPC local planner.
 
 # Acknowledgement
 
@@ -255,6 +289,5 @@ We would like to thank the following open-source projects:
 - [PA-DMPC-UAV-Ad-Hoc](https://github.com/brian00715/PA-DMPC-UAV-Ad-Hoc)
 - [EasyOCR](https://github.com/JaidedAI/EasyOCR)
 - [occ_grid_mapping](https://github.com/ydsf16/occ_grid_mapping/)
+
 ---
-
-

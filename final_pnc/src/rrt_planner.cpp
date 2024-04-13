@@ -177,7 +177,6 @@ namespace rrt_planner
     path.header.frame_id = map_grid_->header.frame_id;
     path.header.stamp = ros::Time::now();
 
-    // TODO: Fill nav_msgs::Path msg with the path calculated by RRT
     std::vector<geometry_msgs::PoseStamped> tempPathPoses;
     const RRTNode *currNode = &tree_->back();
     while (currNode != nullptr)
@@ -212,7 +211,6 @@ namespace rrt_planner
 
   bool RRTPlanner::isPointUnoccupied(const Point2D &p)
   {
-    // TODO: Fill out this function to check if a given point is occupied/free in the map
     if (p.x() < 0 || p.x() >= map_grid_->info.height || p.y() < 0 || p.y() >= map_grid_->info.width)
     {
       return false;
@@ -400,8 +398,6 @@ namespace rrt_planner
     goal_received_ = false;
     init_pose_received_ = false;
 
-    // TODO: Fill out this function with the RRT algorithm logic to plan a collision-free
-    //       path through the map starting from the initial pose and ending at the goal pose
 
     ROS_INFO("Start to plan path using RRT...");
 

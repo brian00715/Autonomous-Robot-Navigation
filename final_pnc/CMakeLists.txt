@@ -55,9 +55,7 @@ target_link_libraries(rrt_planner_node
 
 # add_executable(global_planner_node src/global_planner_node.cpp
 # src/graph_planner/a_star.cpp
-# src/graph_planner/jump_point_search.cpp
 # src/graph_planner/d_star.cpp
-# src/graph_planner/lpa_star.cpp
 # src/graph_planner/d_star_lite.cpp
 # src/graph_planner/voronoi.cpp
 # src/graph_planner/theta_star.cpp

@@ -16,6 +16,11 @@
 
 <launch>
   <param name="/use_sim_time" value="true" />
+  <arg name="enable_ekf" default="$(optenv ENABLE_EKF true)" />
+
+  <arg name="odom_source"
+    default="$(eval arg('enable_ekf') and '/odometry/filtered' or '/gazebo/ground_truth/state')" />
+
 
   <!-- Load 'jackal' model (NO NEED, DON'T TRY) -->
   <!-- <param name="robot_description"
@@ -34,7 +39,7 @@
           -load_state_filename $(arg load_state_filename)">
     <!-- output="screen"> -->
     <remap from="/scan" to="/front/scan" />
-    <remap from="/odom" to="/odometry/filtered" />
+    <remap from="/odom" to="$(arg odom_source)" />
     <remap from="/imu" to="/imu/data" />
     <remap from="/fix" to="/navsat/fix" />
   </node>

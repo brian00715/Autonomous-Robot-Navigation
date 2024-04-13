@@ -1,0 +1,29 @@
+{
+    "time": "2024-04-13 17:04:16",
+    "method": "mpc",
+    "map_frame": "map",
+    "ref_path_topic": "/move_base/TrajectoryPlannerROS/global_plan",
+    "odom_topic": "/gazebo/ground_truth/state",
+    "make_plan_topic": "/move_base/NavfnROS/make_plan",
+    "make_plan_local_topic": "/move_base_local/move_base_local/NavfnROS/make_plan",
+    "local_window_size": 3,
+    "freq": 50,
+    "xy_tol": 0.15,
+    "ang_tol": 0.17453292519943295,
+    "vel_ref": 2,
+    "max_vel": 2,
+    "max_lin_acc": 15,
+    "max_ang_acc": 20,
+    "max_omega": 2,
+    "N": 20,
+    "T": 0.05,
+    "Q": [
+        5.0,
+        5.0,
+        0.0
+    ],
+    "R": [
+        0.2,
+        0.2
+    ]
+}

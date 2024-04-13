@@ -13,7 +13,7 @@
   <!-- <include file="$(find final_slam)/launch/localization_carto.launch" /> -->
 
   <!-- Launch Navigation -->
-  <!-- <include file="$(find final_pnc)/launch/navigation.launch" /> -->
+  <!-- <include file="$(find final_pnc)/launch/pnc.launch" /> -->
 
 
   <!-- Launch Perception -->

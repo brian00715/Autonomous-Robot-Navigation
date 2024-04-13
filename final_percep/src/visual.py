@@ -16,7 +16,7 @@ import tf
 import tf2_ros
 from cv_bridge import CvBridge
 from geometry_msgs.msg import PoseStamped
-from nav_msgs.msg import OccupancyGrid
+from nav_msgs.msg import OccupancyGrid, Odometry
 from sensor_msgs.msg import CameraInfo, Image, LaserScan
 from std_msgs.msg import String
 from tf.transformations import euler_from_quaternion
@@ -45,6 +45,7 @@ class Visual:
         self.img_frame = self.camera_info.header.frame_id
         self.ocr_detector = easyocr.Reader(["en"], gpu=True)
         self.numberposelists = np.zeros((10, 2))
+        self.curr_odom = None
 
         # pubs
         self.target_pose_pub = rospy.Publisher("/percep/pose", PoseStamped, queue_size=1)
@@ -57,7 +58,11 @@ class Visual:
         self.goalsub = rospy.Subscriber("/rviz_panel/goal_name", String, self.goal_callback)
         self.redcmdsub = rospy.Subscriber("/percep/cmd", String, self.detect_mode_callback)
         self.img_sub = rospy.Subscriber("/front/image_raw", Image, self.img_callback)
+        self.odom_sub = rospy.Subscriber("/final_slam/odom", Odometry, self.odom_callback)
         rospy.loginfo("visual node initialized")
+
+    def odom_callback(self, msg):
+        self.curr_odom = msg
 
     def img_callback(self, msg: Image):
         self.img_curr = self.bridge.imgmsg_to_cv2(msg, "bgr8")
@@ -90,6 +95,8 @@ class Visual:
     def run(self):
         rate = rospy.Rate(self.rate)
         while not rospy.is_shutdown():
+            if self.img_curr is None:
+                continue
             rospy.loginfo_throttle(2, f"detect_mode: {self.detect_mode}")
 
             if self.detect_mode == "red":
@@ -152,7 +159,7 @@ class Visual:
                     if detection[2] < 0.99:
                         continue
                     if (
-                        diag_len < 50
+                        diag_len < 60
                     ):  # prevent the case that  Recognizing 1 too early leads to incorrect distance estimation
                         continue
                     if detection[1] != self.noi:
@@ -226,7 +233,10 @@ class Visual:
                         goal_p.pose.position.x = goal_x
                         goal_p.pose.position.y = goal_y
                         goal_p.pose.position.z = 0
-                        goal_p.pose.orientation.w = 1
+                        if self.curr_odom is not None:
+                            goal_p.pose.orientation = self.curr_odom.pose.pose.orientation
+                        else:
+                            goal_p.pose.orientation.w = 1
                         self.target_pose_pub.publish(goal_p)
 
                         print(goal_x, goal_y)

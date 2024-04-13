@@ -1,4 +1,4 @@
-#!/bin/zsh -e
+#!/bin/bash -e
 echo "Start a Tmux session."
 tmux start-server
 
@@ -17,7 +17,7 @@ tmux send -t robot_runtime:main.1 'roslaunch me5413_world world.launch' ENTER
 tmux send -t robot_runtime:main.2 'sleep 4' ENTER
 tmux send -t robot_runtime:main.2 "roslaunch final_slam localization_carto.launch" ENTER
 tmux send -t robot_runtime:main.3 'sleep 4' ENTER
-tmux send -t robot_runtime:main.3 "roslaunch final_pnc navigation.launch" ENTER
+tmux send -t robot_runtime:main.3 "roslaunch final_pnc pnc.launch" ENTER
 # tmux send -t robot_runtime:main.3 'sleep 8' ENTER
 # tmux send -t robot_runtime:main.3 "rosrun final_pnc eval_pnc.py" ENTER
 # tmux send -t robot_runtime:main.4 "rosrun final_pnc pub_reach.py "
