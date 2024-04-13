@@ -1,0 +1,46 @@
+# * global planner
+#   * graph_planner
+#     * a_star
+#     * gbfs
+#     * dijkstra
+#     * d_star
+#     * voronoi
+#     * d_star_lite
+#     * theta_star
+#     * lazy_theta_star
+#     * hybrid_a_star
+
+GraphPlanner:
+  # offset of transform from world(x,y) to grid map(x,y)
+  convert_offset: 0.0
+  # error tolerance
+  default_tolerance: 0.0
+  # whether outline the map or not
+  outline_map: true
+  # obstacle inflation factor
+  obstacle_factor: 0.5
+  # whether publish expand zone or not
+  expand_zone: true
+  # whether to store Voronoi map or not
+  voronoi_map: false
+
+  max_curv: 5 # curvature
+  dubin_shot_th: 0.5 # (m)
+
+SamplePlanner:
+  # random sample points
+  sample_points: 2000 #1000 for informed RRT*, 3000 for others
+  # max distance between sample points
+  sample_max_d: 10.0
+  # optimization radius
+  optimization_r: 20.0
+  # offset of transform from world(x,y) to grid map(x,y)
+  convert_offset: 0.0
+  # error tolerance
+  default_tolerance: 0.0
+  # whether outline the map or not
+  outline_map: true
+  # obstacle inflation factor
+  obstacle_factor: 0.5
+  # whether publish expand zone or not
+  expand_zone: true

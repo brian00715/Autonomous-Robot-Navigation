@@ -8,7 +8,6 @@
 #include <costmap_2d/costmap_2d.h>
 #include <tf/transform_listener.h>
 
-#include "global_planner.h"
 #include "dynamicvoronoi.h"
 
 class GlobalPlanner

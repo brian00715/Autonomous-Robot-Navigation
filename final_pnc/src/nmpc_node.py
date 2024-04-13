@@ -7,10 +7,12 @@
  # @ Description:
  """
 
-import time
+import json
 import math
 import os
 import sys
+import time
+from enum import Enum
 
 import ipdb
 import numpy as np
@@ -23,22 +25,22 @@ from geometry_msgs.msg import Pose, PoseArray, PoseStamped, Twist
 from nav_msgs.msg import Odometry, Path
 from nav_msgs.srv import GetPlan
 from nmpc_controller import NMPCC
-from std_msgs.msg import Bool, Int8, Float32
+from std_msgs.msg import Bool, Float32, Int8
 from utils import (
+    NavStatus,
     euclidian_dist_se2,
     find_nearest_point,
+    find_point_from_idx_dist,
     get_acute_angle,
     ndarray2pose_se2,
     path2ndarray_se2,
+    path_lin_interpo,
     path_lin_interpo_cut,
     pose2ndarray_se2,
     quat2yaw,
     reorder_path_points,
-    find_point_from_idx_dist,
-    path_lin_interpo,
-    NavStatus,
 )
-from enum import Enum
+
 from final_pnc.msg import ReachGoal
 
 
@@ -57,7 +59,7 @@ class PIDController:
         self.kd = kd
         self.prev_error = 0
         self.integral = 0
-        self.max_output = 100
+        self.max_output = max_output
 
     def get_output(self, curr, ref, dt):
         error = ref - curr
@@ -77,37 +79,38 @@ class NMPCNode:
 
         # Load parameters
         self.map_frame = "map"
-        config_path = os.path.join(sys.path[0], "../config/nav_params/mpc.yaml")
-        param_dict = yaml.safe_load(open(config_path, "r"))
-        self.ref_path_topic = param_dict["ref_path_topic"]
-        self.odom_topic = param_dict["odom_topic"]
-        self.make_plan_topic = param_dict["make_plan_topic"]
-        self.make_plan_local_topic = param_dict["make_plan_local_topic"]
-        self.xy_tol = param_dict["xy_tol"]
-        self.ang_tol = np.deg2rad(param_dict["ang_tol"])
-        self.vel_ref = param_dict["vel_ref"]
-        self.max_vel = param_dict["max_vel"]
-        self.rot_th = np.deg2rad(param_dict["rot_th"])
-        self.freq = param_dict["freq"]
-        self.local_window_size = param_dict["local_window_size"]
+        self.ref_path_topic = rospy.get_param("~ref_path_topic", "/move_base/TrajectoryPlannerROS/global_plan")
+        self.odom_topic = rospy.get_param("~odom_topic", "/final_slam/odom")
+        self.make_plan_topic = rospy.get_param("~make_plan_topic", "/move_base/NavfnROS/make_plan")
+        self.make_plan_local_topic = rospy.get_param("~make_plan_local_topic", "/move_base_local/move_base_local/NavfnROS/make_plan")
+        self.xy_tol = rospy.get_param("~xy_tol", 0.1)
+        self.ang_tol = np.deg2rad(rospy.get_param("~ang_tol", 10))
+        self.vel_ref = rospy.get_param("~vel_ref", 1.5)
+        self.max_vel = rospy.get_param("~max_vel", 1.5)
+        self.max_omega = rospy.get_param("~max_omega", 2)
+        self.rot_th = np.deg2rad(rospy.get_param("~rot_th", 15))
+        self.freq = rospy.get_param("~freq", 50)
+        self.max_lin_acc = rospy.get_param("~max_lin_acc", 15)
+        self.max_ang_acc = rospy.get_param("~max_ang_acc", 20)
+        self.local_window_size = rospy.get_param("~local_window_size", 3)
 
         self.yaw_pid = PIDController(kp=2, ki=0, kd=0.2)
         self.pos_pid = PIDController(kp=1, ki=0, kd=0.1)
 
         if self.method == "mpc":
-            self.N = param_dict["N"]
-            self.T = param_dict["T"]
+            self.N = rospy.get_param("~N", 20)
+            self.T = rospy.get_param("~T", 0.05)
+            self.Q = np.diag(rospy.get_param("~Q", [5,5,0]))
+            self.R = np.diag(rospy.get_param("~R", [0.2, 0.2]))
             prob_params = {
                 "control_dim": 2,
                 "state_dim": 3,
-                "max_vel": param_dict["max_vel"],
-                "max_lin_acc": param_dict["max_lin_acc"],
-                "max_ang_acc": param_dict["max_ang_acc"],
-                "max_omega": param_dict["max_omega"],
+                "max_vel": self.max_vel,
+                "max_lin_acc": self.max_lin_acc,
+                "max_ang_acc": self.max_ang_acc,
+                "max_omega": self.max_omega,
                 "init_pose": np.array([0, 0, 0]),
             }
-            self.Q = np.diag(param_dict["Q"])
-            self.R = np.diag(param_dict["R"])
             self.controller = NMPCC(
                 T=self.T,
                 N=self.N,
@@ -121,6 +124,32 @@ class NMPCNode:
             self.Q = np.diag([1, 1, 1])
             self.R = np.diag([0.1, 0.1])
             self.dt = 0.1
+
+        param_dict = {
+            "time": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
+            "method": self.method,
+            "map_frame": self.map_frame,
+            "ref_path_topic": self.ref_path_topic,
+            "odom_topic": self.odom_topic,
+            "make_plan_topic": self.make_plan_topic,
+            "make_plan_local_topic": self.make_plan_local_topic,
+            "local_window_size": self.local_window_size,
+            "freq": self.freq,
+            "xy_tol": self.xy_tol,
+            "ang_tol": self.ang_tol,
+            "vel_ref": self.vel_ref,
+            "max_vel": self.vel_ref,
+            "max_lin_acc": self.max_lin_acc,
+            "max_ang_acc": self.max_ang_acc,
+            "max_omega": self.max_omega,
+            "N": self.N,
+            "T": self.T,
+            "Q": [float(self.Q[0, 0]), float(self.Q[1, 1]), float(self.Q[2, 2])],
+            "R": [float(self.R[0, 0]), float(self.R[1, 1])],
+        }
+        json_file = os.path.join(sys.path[0], "../temp/curr_params_log.json")
+        with open(json_file, "w") as f:
+            json.dump(param_dict, f,indent=4)
 
         # States variables
         self.curr_odom = Odometry()
@@ -381,7 +410,7 @@ class NMPCNode:
                     continue
 
             if self.fsm_state == FSMState.ROTATE_TO_START:
-                rospy.loginfo_throttle(1, "Rotating to start yaw")
+                rospy.loginfo_throttle(2, "Rotating to start yaw")
                 ref_point = pose2ndarray_se2(self.interpo_ref_path.poses[2].pose)
                 ref_yaw = np.arctan2(ref_point[1] - self.curr_pose[1], ref_point[0] - self.curr_pose[0])
                 ref_yaw = get_acute_angle(self.curr_pose[2], ref_yaw)
@@ -393,7 +422,7 @@ class NMPCNode:
                 cmd_vel.angular.z = self.yaw_pid.get_output(self.curr_pose[2], ref_yaw, 1 / self.freq)
 
             if self.fsm_state == FSMState.MOVE_TO_GOAL_PID:
-                rospy.loginfo_throttle(1, "Moving to goal by PID")
+                rospy.loginfo_throttle(2, "Moving to goal by PID")
                 ref_x = self.goal_pose.pose.position.x
                 ref_y = self.goal_pose.pose.position.y
                 ref_yaw = np.arctan2(ref_y - self.curr_pose[1], ref_x - self.curr_pose[0])
@@ -415,7 +444,7 @@ class NMPCNode:
                 )
 
             if self.fsm_state == FSMState.ROTATE_TO_GOAL:
-                rospy.loginfo_throttle(1, "Rotating to goal yaw")
+                rospy.loginfo_throttle(2, "Rotating to goal yaw")
                 ref_yaw = quat2yaw(self.goal_pose.pose.orientation)
                 ref_yaw = get_acute_angle(self.curr_pose[2], ref_yaw)
                 dist2goal = np.sqrt(
@@ -440,12 +469,12 @@ class NMPCNode:
                 cmd_vel.angular.z = self.yaw_pid.get_output(self.curr_pose[2], ref_yaw, 1 / self.freq)
 
             if self.fsm_state == FSMState.MPC_TRACKING:
-                rospy.loginfo_throttle(1, "MPC Tracking")
+                rospy.loginfo_throttle(2, "MPC Tracking")
                 dist2goal = np.sqrt(
                     (self.goal_pose_ar[0] - self.curr_pose[0]) ** 2 + (self.goal_pose_ar[1] - self.curr_pose[1]) ** 2
                 )
                 if dist2goal < 1:
-                    rospy.loginfo_throttle(1, "enter slow mode")
+                    rospy.loginfo_throttle(1, "MPC enter slow mode")
                     self.controller.set_param("max_vel", 0.5)
                     self.vel_ref = 0.5
                 else:
@@ -465,7 +494,7 @@ class NMPCNode:
                     cmd_vel = self.compute_cmd_vel_lqr()
 
             if self.fsm_state == FSMState.IDLE:
-                rospy.loginfo_throttle(1, "IDLE")
+                rospy.loginfo_throttle(2, "IDLE")
                 cmd_vel.linear.x = 0
                 cmd_vel.angular.z = 0
                 status = Int8()

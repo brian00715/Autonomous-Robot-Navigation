@@ -1,7 +1,0 @@
-<library path="lib/libmygraph_planner">
-  <class name="graph_planner/GraphPlanner" type="graph_planner::GraphPlanner" base_class_type="nav_core::BaseGlobalPlanner">
-    <description>
-      graph planner
-    </description>
-  </class>
-</library>

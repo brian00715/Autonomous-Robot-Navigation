@@ -1,7 +1,7 @@
 <launch>
 
-  <!-- <arg name="enable_ekf" default="$(optenv ENABLE_EKF true)"/> -->
-  <arg name="enable_ekf" value="false"/>
+  <arg name="enable_ekf" default="$(optenv ENABLE_EKF true)"/>
+  <!-- <arg name="enable_ekf" value="false"/> -->
 
   <rosparam command="load" file="$(find jackal_control)/config/control.yaml" />
 

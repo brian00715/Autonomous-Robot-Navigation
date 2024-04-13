@@ -13,5 +13,5 @@
         <include file="$(find final_slam)/launch/localization_carto.launch" />
     </group>
 
-    <include file="$(find final_pnc)/launch/navigation.launch" />
+    <include file="$(find final_pnc)/launch/pnc.launch" />
 </launch>

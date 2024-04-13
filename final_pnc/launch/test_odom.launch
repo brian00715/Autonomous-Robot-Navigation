@@ -3,7 +3,7 @@
 
     <include file="$(find me5413_world)/launch/world.launch" />
 
-    <!-- <include file="$(find final_pnc)/launch/navigation.launch">
+    <!-- <include file="$(find final_pnc)/launch/pnc.launch">
         <arg name="localization" value="gt" />
     </include> -->
 
