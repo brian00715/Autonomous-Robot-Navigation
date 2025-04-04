@@ -74,6 +74,7 @@ bash ./install.sh
 
 ```shell
 cd ~; git clone https://github.com/brian00715/Autonomous-Robot-Navigation me5413_final_ws
+cp -r ~/me5413_final_ws/src/me5413_world/models/* ~/.gazebo/models
 cd ~/me5413_final_ws
 catkin init
 catkin config -DPYTHON_EXECUTABLE=/usr/bin/python3 -DCMAKE_BUILD_TYPE=RelWithDebInfo
@@ -130,7 +131,7 @@ export PYTHONPATH=$PYTHONPATH:/usr/lib/python3.8/dist-packages
 
 ## Running
 
-### One-click launch
+### One-click launch (recommend)
 
 > Note: please confirm the conda environment and Cartographer have already been installed and built scuccessfully before running the one-click launch.
 
@@ -167,7 +168,7 @@ roslaunch me5413_world me5413_world.launch
   An example of mapping by 2D Cartographer is shown as follows:
 
   <p align="center">
-      <img src="final_slam/maps/carto_map_2d.png" alt="carto_map" width="30%">
+      <img src="src/final_slam/maps/carto_map_2d.png" alt="carto_map" width="30%">
   </p>
 - **Fast-LIO**
 
@@ -179,7 +180,7 @@ roslaunch me5413_world me5413_world.launch
   An example of point cloud by FastLIO is shown as follows:
 
   <p align="center">
-      <img src="final_slam/maps/fast_lio_point_cloud.png" alt="fast_lio_pcd" width="30%">
+      <img src="src/final_slam/maps/fast_lio_point_cloud.png" alt="fast_lio_pcd" width="30%">
   </p>
 
   - Point Cloud to Map
@@ -207,7 +208,7 @@ roslaunch me5413_world me5413_world.launch
     Then you can obtain the `.pgm` map file. An example is shown as follows:
 
     <p align="center">
-        <img src="final_slam/maps/fast_lio_map.png" alt="fast_lio_map" width="30%">
+        <img src="src/final_slam/maps/fast_lio_map.png" alt="fast_lio_map" width="30%">
     </p>
 - **Map Fusion**
 
@@ -222,7 +223,7 @@ roslaunch me5413_world me5413_world.launch
   You will obtain the fused map named `fusion_map.pgm` in `final_slam/maps`. The result is shown as follows:
 
   <p align="center">
-        <img src="final_slam/maps/fusion_map.png" alt="fusion_map" width="30%">
+        <img src="src/final_slam/maps/fusion_map.png" alt="fusion_map" width="30%">
   </p>
 
 #### Localization (With built map)
