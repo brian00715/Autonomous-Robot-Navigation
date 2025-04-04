@@ -6,3 +6,5 @@ build/
 
 .catkin_tools
 abseil-cpp
+
+**__pycache__**

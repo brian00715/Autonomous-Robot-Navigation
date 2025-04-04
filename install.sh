@@ -16,8 +16,10 @@ git clone https://github.com/gpakosz/.tmux.git
 ln -s -f .tmux/.tmux.conf
 cp .tmux/.tmux.conf.local .
 tmux source-file ~/.tmux.conf
-echo "set -g mouse on" >>~/.tmux.conf
-echo "tmux_conf_copy_to_os_clipboard=true" >>~/.tmux.conf
+sed -i '1i\
+set -g mouse on' ~/.tmux.conf.local
+sed -i '1i\
+tmux_conf_copy_to_os_clipboard=true' ~/.tmux.conf.local
 
 echo 'alias rosk="rosnode kill -a ; killall -9 roscore rosmaster gzserver gazebo rviz rqt rqt_tf_tree rqt_graph rqt_reconfigure"
 alias gazebok="pkill -P $(pgrep -f gazebo.launch) ; pkill -9 gzserver ; pkill -9 gzclient"

@@ -15,19 +15,19 @@ If you have any questions, please feel free to contact us: [smkk00715@gmail.com]
 ## Features
 
 - SLAM
-  - [x] Cartographer
-  - [x] Fast-LIO2
-  - [x] Map Fusion
+  - [X] Cartographer
+  - [X] Fast-LIO2
+  - [X] Map Fusion
 - Planning and Control (PnC)
-  - [x] A\*
-  - [x] Theta\*
-  - [x] DWA
-  - [x] TEB
-  - [x] Model Predictive Control (MPC)
+  - [X] A\*
+  - [X] Theta\*
+  - [X] DWA
+  - [X] TEB
+  - [X] Model Predictive Control (MPC)
 - Perception: EasyOCR
 - Decision and Exploration
-  - [x] Finite State Machine (FSM)
-  - [x] Frontier and occupancy grid map-based exploration
+  - [X] Finite State Machine (FSM)
+  - [X] Frontier and occupancy grid map-based exploration
 - Pipeline: Highly modular, automated, and configurable
 
 ## Structure
@@ -90,7 +90,6 @@ catkin config -DPYTHON_EXECUTABLE=/usr/bin/python3 -DCMAKE_BUILD_TYPE=RelWithDeb
   ```shell
   ~/me5413_final_ws/src/third_party/cartographer/cartographer/scripts/install_abseil.sh
   ```
-
 - Build:
 
   ```shell
@@ -117,7 +116,7 @@ echo "source ~/me5413_final_ws/devel/setup.bash" >> ~/.bashrc
 bash
 ```
 
-### Prepare perception packages (optional)
+### 3. Prepare perception packages (optional)
 
 Please install `conda` first.
 
@@ -170,7 +169,6 @@ roslaunch me5413_world me5413_world.launch
   <p align="center">
       <img src="final_slam/maps/carto_map_2d.png" alt="carto_map" width="30%">
   </p>
-
 - **Fast-LIO**
 
   ```shell
@@ -211,7 +209,6 @@ roslaunch me5413_world me5413_world.launch
     <p align="center">
         <img src="final_slam/maps/fast_lio_map.png" alt="fast_lio_map" width="30%">
     </p>
-
 - **Map Fusion**
 
   To fully utilize the maps generated both by Cartographer and Fast-LIO, we provide a simple Python script that uses image processing methods to fuse these two high-quality maps into one. To perform this, execute:
