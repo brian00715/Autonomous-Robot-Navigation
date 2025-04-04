@@ -2,6 +2,8 @@
 
 Task Description: please refer to [./docs/ME5413_Final_Project.pdf](./docs/ME5413_Final_Project.pdf).
 
+You can read our [report](./ME5413_Final_Report.pdf) for more details.
+
 Demo:
 
 ![](./docs/30s.gif)
@@ -13,19 +15,19 @@ If you have any questions, please feel free to contact us: [smkk00715@gmail.com]
 ## Features
 
 - SLAM
-  - [x] Cartographer
-  - [x] Fast-LIO2
-  - [x] Map Fusion
+  - [X] Cartographer
+  - [X] Fast-LIO2
+  - [X] Map Fusion
 - Planning and Control (PnC)
-  - [x] A\*
-  - [x] Theta\*
-  - [x] DWA
-  - [x] TEB
-  - [x] Model Predictive Control (MPC)
+  - [X] A\*
+  - [X] Theta\*
+  - [X] DWA
+  - [X] TEB
+  - [X] Model Predictive Control (MPC)
 - Perception: EasyOCR
 - Decision and Exploration
-  - [x] Finite State Machine (FSM)
-  - [x] Frontier and occupancy grid map-based exploration
+  - [X] Finite State Machine (FSM)
+  - [X] Frontier and occupancy grid map-based exploration
 - Pipeline: Highly modular, automated, and configurable
 
 ## Structure
@@ -52,9 +54,9 @@ If you have any questions, please feel free to contact us: [smkk00715@gmail.com]
 - C++11 and above
 
 ```shell
-sudo apt install ros-noetic-rviz-imu-plugin ros-noetic-move-base ros-noetic-navfn tmux python3-catkin-tools python3-wstool python3-rosdep ninja-build stow ffmpeg
-
-python -m pip install Pillow markupsafe==1.1.1 ipdb
+sudo apt install ros-noetic-rviz-imu-plugin ros-noetic-move-base ros-noetic-navfn tmux python3-catkin-tools python3-wstool  python3-rosdep ninja-build stow ffmpeg lua5.2 liblua5.2-dev
+sudo apt-get remove ros-${ROS_DISTRO}-abseil-cpp
+python -m pip install Pillow markupsafe==2.0.1 jinja2 ipdb
 ```
 
 - Some useful commands
@@ -72,12 +74,13 @@ python -m pip install Pillow markupsafe==1.1.1 ipdb
 ### Repository setup
 
 ```shell
-mkdir ~/me5413_final_ws/ && cd ~/me5413_final_ws/
-git clone https://github.com/brian00715/Autonomous-Robot-Navigation src
+cd ~
+git clone https://github.com/brian00715/Autonomous-Robot-Navigation me5413_final_ws
+catkin init
 catkin config -DPYTHON_EXECUTABLE=/usr/bin/python3 -DCMAKE_BUILD_TYPE=RelWithDebInfo
 
 # package ros dependencies
-rosdep install --from-paths src --ignore-src --rosdistro=${ROS_DISTRO} -y
+rosdep install --from-paths src --ignore-src --rosdistro=noetic -y
 ```
 
 Someone may encounter the issue that the RViz runs extremely slow when visualizing the point cloud. To accelerate the point cloud processing, you can edit the Velodyne description file:
@@ -88,7 +91,44 @@ roscd velodyne_description/urdf
 
 Open the `VLP-16.urdf.xacro` and `HDL-32E.urdf.xacro`, change the `gpu:=false` to `gpu:=true` on line 4.
 
-### Perception
+### 1. Build SLAM packages
+
+> Note: You can choose to install the relied SLAM packages. No need to install all of them.
+
+#### Cartographer (Recommended)
+
+- Install Abseil-cpp Library
+
+  ```shell
+  ~/me5413_final_ws/src/third_party/cartographer/cartographer/scripts/install_abseil.sh
+  ```
+- Build:
+
+  ```shell
+  cd ~/me5413_final_ws
+  catkin build cartographer*
+  ```
+
+#### Fast-LIO (optional)
+
+- Build
+
+  ```shell
+  cd ~/me5413_final_ws
+  catkin build fast_lio
+  ```
+
+### 2. Build extra packages
+
+> Note: the SLAM packages should be built before this step.
+
+```shell
+catkin build final_slam final_pnc final_percep final_fsm jackal* interactive_tools me5413_world
+echo "source ~/me5413_final_ws/devel/setup.bash" >> ~/.bashrc
+bash
+```
+
+### Prepare perception packages (optional)
 
 Please install `conda` first.
 
@@ -100,72 +140,6 @@ conda install -c conda-forge opencv rosdep rospkg easyocr decorator pexpect nump
 export PYTHONPATH=$PYTHONPATH:/usr/lib/python3.8/dist-packages
 ```
 
-### SLAM
-
-> Note: You can choose to install the relied SLAM packages. No need to install all of them.
-
-#### 1. Cartographer (Recommended)
-
-Please open a terminal in your workspace and execute the following commands to install Cartographer.
-
-- Install Abseil-cpp Library
-
-  Cartographer requires the `abseil-cpp` library, which needs to be manually installed using the provided script. Run the `install_abseil.sh` script:
-
-  ```shell
-  ~/me5413_final_ws/src/third_party/cartographer/cartographer/scripts/install_abseil.sh
-  ```
-
-- Build and Install:
-
-  ```shell
-  catkin build cartographer*
-  ```
-
-#### 2. Fast-LIO
-
-Fast-LIO relies on `Livox-SDK` and `livox_ros_driver`, please satisify prerequisites first before compile `Fast-LIO`.
-
-For **Ubuntu 18.04 or higher**, with **ROS >= Melodic**, the **default** PCL and Eigen is enough for FAST-LIO to work normally.
-
-- **Livox-SDK**
-  `Livox SDK` is the software development kit designed for all Livox products and required by Fast-LIO. To install and compile the SDK,
-  please follow:
-
-  ```shell
-  cd ~/me5413_final_ws/src/third_party/Livox-SDK
-  cd build && cmake ..
-  make -j
-  sudo make install
-  ```
-
-- **livox_ros_driver**
-
-  `livox_ros_driver` is a ROS package used to connect LiDAR products produced by Livox, and is necessary for Fast-LIO. This package can be compiled by running
-
-  ```shell
-  cd ~/me5413_final_ws
-  catkin build livox_ros_driver
-  ```
-
-- **Build**
-
-  If all the prerequisites are satisfied, Fast-LIO can be easily complied by running
-
-  ```shell
-  cd ~/me5413_final_ws
-  catkin build fast_lio
-  ```
-
-### Build
-
-> Note: the SLAM packages should be built before this step.
-
-```shell
-catkin build final_slam final_pnc final_percep final_fsm jackal* interactive_tools me5413_world
-echo "source ~/me5413_final_ws/devel/setup.bash" >> ~/.bashrc
-```
-
 ## Running
 
 ### One-click launch
@@ -175,6 +149,12 @@ echo "source ~/me5413_final_ws/devel/setup.bash" >> ~/.bashrc
 ```shell
 rosrun final_fsm start.sh
 rosrun final_fsm start.sh -e -r # enable EKF and enable screen recording
+```
+
+You can simply kill all the programs immediately by running:
+
+```
+tmux kill-server
 ```
 
 ### Step-by-step launch
@@ -201,7 +181,6 @@ roslaunch me5413_world me5413_world.launch
   <p align="center">
       <img src="final_slam/maps/carto_map_2d.png" alt="carto_map" width="30%">
   </p>
-
 - **Fast-LIO**
 
   ```shell
@@ -242,7 +221,6 @@ roslaunch me5413_world me5413_world.launch
     <p align="center">
         <img src="final_slam/maps/fast_lio_map.png" alt="fast_lio_map" width="30%">
     </p>
-
 - **Map Fusion**
 
   To fully utilize the maps generated both by Cartographer and Fast-LIO, we provide a simple Python script that uses image processing methods to fuse these two high-quality maps into one. To perform this, execute:
@@ -272,7 +250,6 @@ roslaunch final_slam localization_carto.launch # cartographer by default
   ```shell
   rosrun final_pnc debug.sh
   ```
-
 - Only navigation
 
   ```shell
