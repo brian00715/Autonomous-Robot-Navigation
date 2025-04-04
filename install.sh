@@ -1,7 +1,7 @@
 sudo apt install -y ros-noetic-rviz-imu-plugin ros-noetic-move-base ros-noetic-navfn tmux python3-catkin-tools python3-wstool python3-rosdep ninja-build stow ffmpeg lua5.2 liblua5.2-dev libceres-dev ros-noetic-ros-control ros-noetic-navigation ros-noetic-jsk-rviz-plugins htop ros-noetic-velodyne-description ros-noetic-flir-camera-description ros-noetic-lms1xx ros-noetic-pointgrey-camera-description ros-noetic-sick-tim ros-noetic-interactive-marker-twist-server ros-noetic-diff-drive-controller ros-noetic-joint-state-controller ros-noetic-joy ros-noetic-robot-localization ros-noetic-teleop-twist-joy ros-noetic-topic-tools ros-noetic-twist-mux xclip
 
 sudo apt-get remove -y ros-${ROS_DISTRO}-abseil-cpp
-python -m pip install Pillow markupsafe==2.0.1 jinja2 ipdb scipy casadi
+python3 -m pip install Pillow markupsafe==2.0.1 jinja2 ipdb scipy casadi
 
 git clone https://github.com/osrf/gazebo_models.git ~/.gazebo/models
 

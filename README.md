@@ -59,7 +59,7 @@ Recommend to use the following script if you haven't installed ROS yet:
 wget http://fishros.com/install -O fishros && . fishros
 ```
 
-Simple installation script:
+Super simple installation! Just run:
 
 ```shell
 bash ./install.sh

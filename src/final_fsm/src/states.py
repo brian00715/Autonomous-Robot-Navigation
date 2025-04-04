@@ -116,7 +116,7 @@ class Task2State(State):
         self.process = None
         self.curr_phase = 0
         self.sent_num_box_pose = False
-        self.gcostmap_client = DynamicReconfigureClient("/move_base/global_costmap/", timeout=30)
+        self.gcostmap_client = DynamicReconfigureClient("/move_base/global_costmap/", timeout=60)
 
     def init(self, arg):
         self.robot.pub_explore.publish(True)
@@ -159,7 +159,7 @@ class Task2State(State):
 class Task3Tracking(State):
     def __init__(self, robot):
         super().__init__(robot)
-        self.gcostmap_client = DynamicReconfigureClient("/move_base/global_costmap/", timeout=30)
+        self.gcostmap_client = DynamicReconfigureClient("/move_base/global_costmap/", timeout=60)
     def init(self, goal_pose):
         self.robot.pub_goal.publish(goal_pose)
         self.gcostmap_client.update_configuration(

@@ -27,7 +27,8 @@
   <include file="$(find final_fsm)/launch/explore.launch" />
 
   <!-- Launch the state machine -->
-  <node ns="final_fsm" pkg="final_fsm" type="state_machine_node.py" name="state_machine_node" output="screen" />
+  <node ns="final_fsm" pkg="final_fsm" type="state_machine_node.py" name="state_machine_node" output="screen" respawn="true"/>
+    
 
 
 </launch>
