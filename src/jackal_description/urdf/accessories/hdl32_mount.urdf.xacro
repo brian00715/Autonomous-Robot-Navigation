@@ -38,7 +38,7 @@
         <xacro:insert_block name="origin" />      
       </joint>
       <!-- Velodyne HDL-32E Macro treats Y-axis as forward in pointcloud --> 
-      <xacro:HDL-32E parent="${prefix}_hdl32e_mount" topic="${topic}">
+      <xacro:HDL-32E parent="${prefix}_hdl32e_mount" topic="${topic}" gpu="true">
         <origin xyz="0 0 0" rpy="0 0 -1.5707"/>
       </xacro:HDL-32E>
     </xacro:unless>

@@ -29,6 +29,7 @@
   <depend>tf</depend>
   <depend>costmap_2d</depend>
   <depend>actionlib</depend>
+  <depend>final_pnc</depend>
 
   <test_depend>roslaunch</test_depend>
 </package>
