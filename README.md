@@ -15,19 +15,19 @@ If you have any questions, please feel free to contact us: [smkk00715@gmail.com]
 ## Features
 
 - SLAM
-  - [X] Cartographer
-  - [X] Fast-LIO2
-  - [X] Map Fusion
+  - [x] Cartographer
+  - [x] Fast-LIO2
+  - [x] Map Fusion
 - Planning and Control (PnC)
-  - [X] A\*
-  - [X] Theta\*
-  - [X] DWA
-  - [X] TEB
-  - [X] Model Predictive Control (MPC)
+  - [x] A\*
+  - [x] Theta\*
+  - [x] DWA
+  - [x] TEB
+  - [x] Model Predictive Control (MPC)
 - Perception: EasyOCR
 - Decision and Exploration
-  - [X] Finite State Machine (FSM)
-  - [X] Frontier and occupancy grid map-based exploration
+  - [x] Finite State Machine (FSM)
+  - [x] Frontier and occupancy grid map-based exploration
 - Pipeline: Highly modular, automated, and configurable
 
 ## Structure
@@ -53,43 +53,31 @@ If you have any questions, please feel free to contact us: [smkk00715@gmail.com]
 - ROS Noetic
 - C++11 and above
 
+Recommend to use the following script if you haven't installed ROS yet:
+
 ```shell
-sudo apt install ros-noetic-rviz-imu-plugin ros-noetic-move-base ros-noetic-navfn tmux python3-catkin-tools python3-wstool  python3-rosdep ninja-build stow ffmpeg lua5.2 liblua5.2-dev
-sudo apt-get remove ros-${ROS_DISTRO}-abseil-cpp
-python -m pip install Pillow markupsafe==2.0.1 jinja2 ipdb
+wget http://fishros.com/install -O fishros && . fishros
 ```
 
-- Some useful commands
+Simple installation script:
 
-  In your `.bashrc` or `.zshrc` file, add the following lines:
+```shell
+bash ./install.sh
+```
 
-  ```shell
-  alias rosk='rosnode kill -a ; killall -9 roscore rosmaster gzserver gazebo rviz ; kill -9 $(pgrep -f rqt)' # kill all ROS processes immediately
-  alias gazebok="pkill -P $(pgrep -f gazebo.launch) ; pkill -9 gzserver ; pkill -9 gzclient" # kill gazebo immediately
-  alias rqtg="rosrun rqt_graph rqt_graph"
-  alias rqttf="rosrun rqt_tf_tree rqt_tf_tree"
-  alias rqtrecon="rosrun rqt_reconfigure rqt_reconfigure"
-  ```
+- Some useful commands installed
+
+  - `gazebok`: kill gazebo immediately.
+  - `rosk`: kill all ros-related programs immediately.
 
 ### Repository setup
 
 ```shell
-cd ~
-git clone https://github.com/brian00715/Autonomous-Robot-Navigation me5413_final_ws
+cd ~; git clone https://github.com/brian00715/Autonomous-Robot-Navigation me5413_final_ws
+cd ~/me5413_final_ws
 catkin init
 catkin config -DPYTHON_EXECUTABLE=/usr/bin/python3 -DCMAKE_BUILD_TYPE=RelWithDebInfo
-
-# package ros dependencies
-rosdep install --from-paths src --ignore-src --rosdistro=noetic -y
 ```
-
-Someone may encounter the issue that the RViz runs extremely slow when visualizing the point cloud. To accelerate the point cloud processing, you can edit the Velodyne description file:
-
-```shell
-roscd velodyne_description/urdf
-```
-
-Open the `VLP-16.urdf.xacro` and `HDL-32E.urdf.xacro`, change the `gpu:=false` to `gpu:=true` on line 4.
 
 ### 1. Build SLAM packages
 
@@ -102,6 +90,7 @@ Open the `VLP-16.urdf.xacro` and `HDL-32E.urdf.xacro`, change the `gpu:=false` t
   ```shell
   ~/me5413_final_ws/src/third_party/cartographer/cartographer/scripts/install_abseil.sh
   ```
+
 - Build:
 
   ```shell
@@ -123,7 +112,7 @@ Open the `VLP-16.urdf.xacro` and `HDL-32E.urdf.xacro`, change the `gpu:=false` t
 > Note: the SLAM packages should be built before this step.
 
 ```shell
-catkin build final_slam final_pnc final_percep final_fsm jackal* interactive_tools me5413_world
+catkin build
 echo "source ~/me5413_final_ws/devel/setup.bash" >> ~/.bashrc
 bash
 ```
@@ -166,7 +155,7 @@ export ENABLE_EKF=false # set to false means using the ground truth odometry, ot
 roslaunch me5413_world me5413_world.launch
 ```
 
-#### Mapping
+#### Mapping (only if you want to build new maps)
 
 - **Cartographer**
 
@@ -181,6 +170,7 @@ roslaunch me5413_world me5413_world.launch
   <p align="center">
       <img src="final_slam/maps/carto_map_2d.png" alt="carto_map" width="30%">
   </p>
+
 - **Fast-LIO**
 
   ```shell
@@ -221,6 +211,7 @@ roslaunch me5413_world me5413_world.launch
     <p align="center">
         <img src="final_slam/maps/fast_lio_map.png" alt="fast_lio_map" width="30%">
     </p>
+
 - **Map Fusion**
 
   To fully utilize the maps generated both by Cartographer and Fast-LIO, we provide a simple Python script that uses image processing methods to fuse these two high-quality maps into one. To perform this, execute:
@@ -245,24 +236,25 @@ roslaunch final_slam localization_carto.launch # cartographer by default
 
 #### Navigation
 
-- With Gazebo, cartographer, and navigation
+```shell
+roslaunch final_pnc pnc.launch
+```
 
-  ```shell
-  rosrun final_pnc debug.sh
-  ```
-- Only navigation
-
-  ```shell
-  roslaunch final_pnc pnc.launch
-  ```
-
-#### FSM
+#### FSM (optional)
 
 ```shell
 roslaunch final_fsm fsm.launch
 ```
 
 ## Configuration
+
+Someone may encounter the issue that the RViz runs extremely slow when visualizing the point cloud. To accelerate the point cloud processing, you can edit the Velodyne description file:
+
+```shell
+roscd velodyne_description/urdf
+```
+
+Open the `VLP-16.urdf.xacro` and `HDL-32E.urdf.xacro`, change the `gpu:=false` to `gpu:=true` on line 4.
 
 ### Localization
 
